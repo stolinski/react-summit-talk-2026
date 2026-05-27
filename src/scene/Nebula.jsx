@@ -47,7 +47,7 @@ export function Nebula() {
   )
 
   return (
-    <mesh scale={3500}>
+    <mesh scale={60000}>
       <sphereGeometry args={[1, 48, 48]} />
       <shaderMaterial
         uniforms={uniforms}

@@ -3,13 +3,16 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { snoise } from '../shaders/snoise.js'
+import { SUN_POSITION } from './layout.js'
 
 /**
  * A planet that looks like a planet:
- *  - surface: fbm-noise continents/bands, lit from the galaxy core (so the
- *    terminator faces the bright center), with a fresnel sheen at the limb
- *  - atmosphere: a slightly larger additive shell that glows only at the rim
- *    — the trick that sells "this is a real world," amplified by bloom.
+ *  - surface: fbm continents + a finer detail octave for texture, with the
+ *    normal perturbed by the noise gradient (bump mapping) so the terminator
+ *    and surface catch the sunlight with real relief
+ *  - atmosphere: a THIN shell (1.05x) with a high-power fresnel, so it's a
+ *    crisp limb halo, not a fat glowing circle
+ *  Lit from the sun at the system center.
  */
 const surfaceVert = /* glsl */ `
   varying vec3 vNormalW;
@@ -35,18 +38,31 @@ const surfaceFrag = /* glsl */ `
   varying vec3 vPos;
   ${snoise}
   void main() {
-    vec3 n = normalize(vNormalW);
+    vec3 dir = normalize(vPos);
+    float e = fbm(dir * uFreq);
 
-    float elevation = fbm(normalize(vPos) * uFreq);
-    vec3 base = mix(uColorDeep, uColor, smoothstep(-0.35, 0.55, elevation));
+    // Bump mapping: perturb the normal by the noise gradient for real relief.
+    float eps = 0.02;
+    vec3 t1 = normalize(cross(dir, vec3(0.0, 1.0, 0.0)) + vec3(0.0001));
+    vec3 t2 = cross(dir, t1);
+    float e1 = fbm((dir + t1 * eps) * uFreq);
+    float e2 = fbm((dir + t2 * eps) * uFreq);
+    vec3 grad = (t1 * (e1 - e) + t2 * (e2 - e)) / eps;
+    vec3 n = normalize(normalize(vNormalW) - grad * 0.45);
+
+    // Fine mottling so the surface reads as textured, not flat paint.
+    float detail = fbm(dir * uFreq * 4.0) * 0.5 + 0.5;
+
+    vec3 base = mix(uColorDeep, uColor, smoothstep(-0.4, 0.5, e));
+    base *= (0.8 + 0.35 * detail);
 
     float diff = clamp(dot(n, normalize(uLightDir)), 0.0, 1.0);
-    float ambient = 0.22;
-    vec3 lit = base * (ambient + diff * 1.15);
+    float ambient = 0.16;
+    vec3 lit = base * (ambient + diff * 1.25);
 
-    // Fresnel limb -> blends into the atmosphere color.
-    float fres = pow(1.0 - max(dot(n, vViewDir), 0.0), 3.0);
-    lit += uAtmo * fres * 0.85;
+    // Subtle limb light tinted by the atmosphere.
+    float fres = pow(1.0 - max(dot(normalize(vNormalW), vViewDir), 0.0), 4.0);
+    lit += uAtmo * fres * 0.35;
 
     gl_FragColor = vec4(lit, 1.0);
   }
@@ -57,26 +73,29 @@ const atmoFrag = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   void main() {
-    float fres = pow(1.0 - max(dot(normalize(vNormalW), normalize(vViewDir)), 0.0), 3.5);
-    gl_FragColor = vec4(uAtmo * 0.7, fres);
+    // High-power fresnel => energy concentrated right at the limb (a thin rim),
+    // so it's an atmosphere, not a filled disc.
+    float fres = pow(1.0 - max(dot(normalize(vNormalW), normalize(vViewDir)), 0.0), 5.0);
+    gl_FragColor = vec4(uAtmo, fres * 0.55);
   }
 `
 
 export function Planet({
   position = [0, 0, 0],
-  radius = 4,
+  radius = 3,
   color = '#3b82f6',
   colorDeep,
   atmosphere,
   label,
   freq = 2.4,
-  spin = 0.012,
+  spin = 0.01,
 }) {
   const surface = useRef()
 
   const surfaceUniforms = useMemo(() => {
-    // Lit from the galaxy core at the origin.
-    const lightDir = new THREE.Vector3(...position).multiplyScalar(-1).normalize()
+    const lightDir = new THREE.Vector3(...SUN_POSITION)
+      .sub(new THREE.Vector3(...position))
+      .normalize()
     return {
       uColor: { value: new THREE.Color(color) },
       uColorDeep: { value: new THREE.Color(colorDeep ?? color).multiplyScalar(0.35) },
@@ -102,7 +121,7 @@ export function Planet({
         <shaderMaterial vertexShader={surfaceVert} fragmentShader={surfaceFrag} uniforms={surfaceUniforms} />
       </mesh>
 
-      <mesh scale={1.22}>
+      <mesh scale={1.05}>
         <sphereGeometry args={[radius, 64, 64]} />
         <shaderMaterial
           vertexShader={surfaceVert}
@@ -111,18 +130,17 @@ export function Planet({
           transparent
           blending={THREE.AdditiveBlending}
           depthWrite={false}
-          side={THREE.FrontSide}
         />
       </mesh>
 
       {label && (
         <Text
-          position={[0, radius * 1.7, 0]}
-          fontSize={radius * 0.42}
+          position={[0, radius * 1.9, 0]}
+          fontSize={radius * 0.5}
           color="#f8fafc"
           anchorX="center"
           anchorY="middle"
-          outlineWidth={radius * 0.012}
+          outlineWidth={radius * 0.015}
           outlineColor="#02030a"
         >
           {label}

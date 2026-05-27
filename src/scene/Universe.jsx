@@ -1,36 +1,26 @@
 import { Stars } from '@react-three/drei'
 import { Galaxy } from './Galaxy.jsx'
 import { Nebula } from './Nebula.jsx'
+import { Sun } from './Sun.jsx'
 import { Planet } from './Planet.jsx'
+import { GALAXY } from './layout.js'
 import { slides } from '../slides/index.js'
-
-/**
- * A static bright core at the galactic center. No animation — bloom alone turns
- * this into a soft glowing heart. (The old pulsing version was a flicker source.)
- */
-function GalacticCore() {
-  return (
-    <mesh>
-      <sphereGeometry args={[7, 32, 32]} />
-      <meshBasicMaterial color="#fff1cf" toneMapped={false} />
-    </mesh>
-  )
-}
 
 export function Universe() {
   return (
     <>
-      <ambientLight intensity={0.22} />
+      <ambientLight intensity={0.15} />
 
       <Nebula />
 
-      {/* Static distant stars — speed={0} kills the twinkle. */}
-      <Stars radius={900} depth={120} count={2500} factor={7} saturation={0} fade speed={0} />
+      {/* Static distant stars filling the volume between system and galaxy. */}
+      <Stars radius={30000} depth={6000} count={4000} factor={40} saturation={0} fade speed={0} />
 
-      <Galaxy />
-      <GalacticCore />
+      {/* The far, enormous galaxy — "the web." */}
+      <Galaxy center={GALAXY.center} radius={GALAXY.radius} />
 
-      {/* Every planet is just a slide that declared one. */}
+      {/* The local solar system. */}
+      <Sun />
       {slides.map((s) => (s.planet ? <Planet key={s.id} {...s.planet} /> : null))}
     </>
   )

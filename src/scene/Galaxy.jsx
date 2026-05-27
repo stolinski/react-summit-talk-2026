@@ -3,25 +3,24 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /**
- * A procedural spiral galaxy — "the web." The points are STATIC (no per-point
- * differential spin — that was the cause of the constant scintillation/flicker).
- * The whole disk drifts almost imperceptibly slowly so it feels alive but never
- * busy. Each point is a soft glowing disc, not a hard 1/d spike, so nothing
- * twinkles when the camera moves.
+ * A procedural spiral galaxy — "the web." Enormous (radius ~6000) and far from
+ * the solar system, so from inside the system it's a luminous band across the
+ * sky, and from the pull-back reveal it's a full face-on spiral with the system
+ * an invisible speck inside it.
+ *
+ * Points are static (no per-point spin — that caused the flicker) with a soft
+ * disc shape; the whole disk drifts imperceptibly. A bright core sphere at the
+ * center blooms into the galactic heart.
  */
 const vertexShader = /* glsl */ `
   uniform float uSize;
   attribute float aScale;
   attribute vec3 aColor;
   varying vec3 vColor;
-
   void main() {
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     gl_Position = projectionMatrix * viewPosition;
-
-    // sqrt attenuation: points stay visible from a planet close-up all the way
-    // out to the full-galaxy reveal, without exploding up close.
     gl_PointSize = uSize * aScale * (1.0 / sqrt(-viewPosition.z));
     vColor = aColor;
   }
@@ -30,7 +29,6 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   varying vec3 vColor;
   void main() {
-    // Soft gaussian-ish disc. No hot center spike => no twinkle.
     float d = distance(gl_PointCoord, vec2(0.5));
     float a = smoothstep(0.5, 0.0, d);
     a = pow(a, 1.5);
@@ -39,10 +37,11 @@ const fragmentShader = /* glsl */ `
 `
 
 export function Galaxy({
-  count = 120000,
-  radius = 240,
+  center = [0, 0, 0],
+  count = 150000,
+  radius = 6000,
   branches = 5,
-  spin = 0.9,
+  spinTurns = 1.25,
   insideColor = '#ffe2b0',
   outsideColor = '#3457d6',
 }) {
@@ -57,19 +56,19 @@ export function Galaxy({
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3
-      const r = Math.pow(Math.random(), 2.0) * radius // dense core
+      const r = Math.pow(Math.random(), 2.2) * radius // dense core
       const branchAngle = ((i % branches) / branches) * Math.PI * 2
-      const spinAngle = r * spin * 0.012
+      const spinAngle = (r / radius) * spinTurns * Math.PI * 2
 
-      const spread = 0.16
+      const spread = 0.12
       const rand = () =>
         Math.pow(Math.random(), 2.8) * (Math.random() < 0.5 ? 1 : -1) * spread * r
 
       positions[i3] = Math.cos(branchAngle + spinAngle) * r + rand()
-      positions[i3 + 1] = rand() * 0.32 // flatten the disk
+      positions[i3 + 1] = rand() * 0.3 // flatten the disk
       positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + rand()
 
-      const mixed = cInside.clone().lerp(cOutside, Math.pow(r / radius, 0.6))
+      const mixed = cInside.clone().lerp(cOutside, Math.pow(r / radius, 0.55))
       colors[i3] = mixed.r
       colors[i3 + 1] = mixed.g
       colors[i3 + 2] = mixed.b
@@ -77,17 +76,17 @@ export function Galaxy({
       scales[i] = Math.random() * 1.0 + 0.5
     }
     return [positions, colors, scales]
-  }, [count, radius, branches, spin, insideColor, outsideColor])
+  }, [count, radius, branches, spinTurns, insideColor, outsideColor])
 
-  const uniforms = useMemo(() => ({ uSize: { value: 34 } }), [])
+  const uniforms = useMemo(() => ({ uSize: { value: 230 } }), [])
 
-  // Barely-perceptible drift — full rotation takes ~10 minutes. Alive, not busy.
+  // ~12 minutes per rotation: alive, never busy.
   useFrame((_, dt) => {
-    if (group.current) group.current.rotation.y += dt * 0.01
+    if (group.current) group.current.rotation.y += dt * 0.008
   })
 
   return (
-    <group ref={group}>
+    <group ref={group} position={center}>
       <points>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[positions, 3]} />
@@ -103,6 +102,12 @@ export function Galaxy({
           transparent
         />
       </points>
+
+      {/* Glowing galactic core. */}
+      <mesh>
+        <sphereGeometry args={[180, 32, 32]} />
+        <meshBasicMaterial color="#fff0cf" toneMapped={false} />
+      </mesh>
     </group>
   )
 }

@@ -16,7 +16,7 @@ export default function App() {
       <Canvas
         dpr={[1, 2]}
         gl={{ antialias: true, logarithmicDepthBuffer: true }}
-        camera={{ position: [55, 8, 95], fov: 50, near: 0.1, far: 6000 }}
+        camera={{ position: [48, 6, 40], fov: 50, near: 0.1, far: 150000 }}
       >
         <color attach="background" args={['#02030a']} />
         <Suspense fallback={null}>
