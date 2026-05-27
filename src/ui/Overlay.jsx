@@ -22,6 +22,15 @@ export function Overlay() {
         {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}
         <h1>{slide.title}</h1>
         {slide.body && <p className="body">{slide.body}</p>}
+        {slide.socials && (
+          <div className="socials">
+            {slide.socials.map((s) => (
+              <span key={s} className="social">
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
         {slide.code && <CodeBlock>{slide.code}</CodeBlock>}
         {Demo && (
           <div className="demo">

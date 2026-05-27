@@ -18,6 +18,27 @@ import { DialogDemo } from './demos/DialogDemo.jsx'
  */
 export const slides = [
   {
+    id: 'intro-syntax',
+    kicker: 'Hello',
+    eyebrow: 'Hi, I’m Scott',
+    title: 'I make Syntax.fm',
+    body: 'A web dev podcast — three times a week. Come say hi.',
+    socials: ['@stolinski', '@syntaxfm'],
+    // Frames the Syntax constellation (at x -360) head-on, camera looking +z
+    // (away from the galaxy band) so the backdrop is clean deep space. Sentry
+    // sits far to the right, off-screen, until the next slide pans over to it.
+    camera: { pos: [-360, 408, 190], target: [-360, 400, 520] },
+  },
+  {
+    id: 'intro-sentry',
+    kicker: 'Hello',
+    eyebrow: 'And my work at',
+    title: 'Sentry',
+    body: 'Application monitoring — and the home of Syntax.',
+    socials: ['@stolinski', '@syntaxfm'],
+    camera: { pos: [360, 408, 190], target: [360, 400, 520] },
+  },
+  {
     id: 'title',
     kicker: 'Departure',
     eyebrow: 'A talk by Scott Tolinski',
