@@ -32,6 +32,7 @@ const surfaceFrag = /* glsl */ `
   uniform vec3 uAtmo;
   uniform vec3 uLightDir;
   uniform float uFreq;
+  uniform float uSpecular;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   varying vec3 vPos;
@@ -40,28 +41,52 @@ const surfaceFrag = /* glsl */ `
     vec3 dir = normalize(vPos);
     float e = fbm(dir * uFreq);
 
-    // Bump mapping: perturb the normal by the noise gradient for real relief.
-    float eps = 0.02;
+    // --- Bump mapping at two scales for real relief + crisp detail ---
     vec3 t1 = normalize(cross(dir, vec3(0.0, 1.0, 0.0)) + vec3(0.0001));
     vec3 t2 = cross(dir, t1);
+
+    float eps = 0.02;
     float e1 = fbm((dir + t1 * eps) * uFreq);
     float e2 = fbm((dir + t2 * eps) * uFreq);
     vec3 grad = (t1 * (e1 - e) + t2 * (e2 - e)) / eps;
-    vec3 n = normalize(normalize(vNormalW) - grad * 0.45);
 
-    // Fine mottling so the surface reads as textured, not flat paint.
-    float detail = fbm(dir * uFreq * 4.0) * 0.5 + 0.5;
+    float fEps = 0.006;
+    float f0 = fbm(dir * uFreq * 5.0);
+    float f1 = fbm((dir + t1 * fEps) * uFreq * 5.0);
+    float f2 = fbm((dir + t2 * fEps) * uFreq * 5.0);
+    vec3 fgrad = (t1 * (f1 - f0) + t2 * (f2 - f0)) / fEps;
 
+    vec3 geoN = normalize(vNormalW);
+    vec3 n = normalize(geoN - grad * 0.6 - fgrad * 0.12);
+
+    float detail = f0 * 0.5 + 0.5;
     vec3 base = mix(uColorDeep, uColor, smoothstep(-0.4, 0.5, e));
     base *= (0.8 + 0.35 * detail);
 
-    float diff = clamp(dot(n, normalize(uLightDir)), 0.0, 1.0);
-    float ambient = 0.16;
-    vec3 lit = base * (ambient + diff * 1.25);
+    vec3 L = normalize(uLightDir);
+    vec3 V = normalize(vViewDir);
+    vec3 H = normalize(L + V);
+    vec3 sun = vec3(1.0, 0.94, 0.84); // warm sunlight
 
-    // Subtle limb light tinted by the atmosphere.
-    float fres = pow(1.0 - max(dot(normalize(vNormalW), vViewDir), 0.0), 4.0);
-    lit += uAtmo * fres * 0.35;
+    // Half-Lambert: soft, wrapped day/night terminator instead of a hard line.
+    float NdotL = dot(n, L);
+    float diff = clamp((NdotL + 0.3) / 1.3, 0.0, 1.0);
+    diff *= diff;
+
+    // Dark, cool night fill (contrast = depth) with a hint of atmosphere bounce.
+    vec3 ambient = uColorDeep * 0.18 + uAtmo * 0.05;
+    vec3 lit = base * (ambient + sun * diff * 1.35);
+
+    // Specular glint — broad on land, tight/strong on low "ocean" areas, lit side only.
+    float ocean = smoothstep(0.08, -0.18, e);
+    float spec = pow(max(dot(n, H), 0.0), mix(14.0, 60.0, ocean));
+    spec *= uSpecular * mix(0.2, 1.0, ocean) * smoothstep(0.0, 0.18, NdotL);
+    lit += sun * spec;
+
+    // Atmospheric forward-scatter: a bright crescent on the sunlit limb.
+    float limb = pow(1.0 - max(dot(geoN, V), 0.0), 3.0);
+    float sunFacing = smoothstep(-0.25, 0.65, dot(geoN, L));
+    lit += uAtmo * limb * sunFacing * 1.7;
 
     gl_FragColor = vec4(lit, 1.0);
   }
@@ -87,6 +112,7 @@ export function Planet({
   atmosphere,
   freq = 2.4,
   spin = 0.01,
+  specular = 0.6,
 }) {
   const surface = useRef()
 
@@ -100,8 +126,9 @@ export function Planet({
       uAtmo: { value: new THREE.Color(atmosphere ?? color) },
       uLightDir: { value: lightDir },
       uFreq: { value: freq },
+      uSpecular: { value: specular },
     }
-  }, [position, color, colorDeep, atmosphere, freq])
+  }, [position, color, colorDeep, atmosphere, freq, specular])
 
   const atmoUniforms = useMemo(
     () => ({ uAtmo: { value: new THREE.Color(atmosphere ?? color) } }),
