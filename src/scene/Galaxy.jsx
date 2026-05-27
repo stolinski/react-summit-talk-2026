@@ -45,7 +45,7 @@ export function Galaxy({
   insideColor = '#ffe2b0',
   outsideColor = '#3457d6',
 }) {
-  const coreRadius = radius * 0.03
+  const coreRadius = radius * 0.022
   const group = useRef()
 
   const [positions, colors, scales] = useMemo(() => {

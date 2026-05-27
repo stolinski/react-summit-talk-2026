@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 /**
@@ -120,22 +121,35 @@ export function LogoConstellation({
 
   const uniforms = useMemo(() => ({ uSize: { value: pointSize } }), [pointSize])
 
+  // Extremely slow float so the constellation feels alive without distracting.
+  const group = useRef()
+  const seed = useMemo(() => Math.random() * 100, [])
+  useFrame(({ clock }) => {
+    if (!group.current) return
+    const t = clock.elapsedTime + seed
+    group.current.position.y = position[1] + Math.sin(t * 0.12) * 3
+    group.current.rotation.x = Math.sin(t * 0.08) * 0.025
+    group.current.rotation.y = Math.cos(t * 0.06) * 0.03
+  })
+
   if (!geom) return null
   return (
-    <points position={position}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[geom.positions, 3]} />
-        <bufferAttribute attach="attributes-aColor" args={[geom.colors, 3]} />
-        <bufferAttribute attach="attributes-aScale" args={[geom.scales, 1]} />
-      </bufferGeometry>
-      <shaderMaterial
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        transparent
-      />
-    </points>
+    <group ref={group} position={position}>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[geom.positions, 3]} />
+          <bufferAttribute attach="attributes-aColor" args={[geom.colors, 3]} />
+          <bufferAttribute attach="attributes-aScale" args={[geom.scales, 1]} />
+        </bufferGeometry>
+        <shaderMaterial
+          uniforms={uniforms}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          transparent
+        />
+      </points>
+    </group>
   )
 }

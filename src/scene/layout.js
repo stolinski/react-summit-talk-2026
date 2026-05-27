@@ -11,6 +11,8 @@
 export const SUN_POSITION = [0, 0, 0]
 
 export const GALAXY = {
-  center: [0, -600, -16000],
+  // Offset well off to one side so the galactic core doesn't sit next to the
+  // sun in the in-system shots. The galaxy reveal slide targets this point.
+  center: [8000, -900, -15000],
   radius: 26000,
 }

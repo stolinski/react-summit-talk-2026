@@ -11,6 +11,7 @@ import { useStore } from './useStore.js'
 export function useKeyboardNav() {
   useEffect(() => {
     const onKey = (e) => {
+      if (e.repeat) return // ignore held-key auto-repeat
       const { next, prev, goto } = useStore.getState()
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault()

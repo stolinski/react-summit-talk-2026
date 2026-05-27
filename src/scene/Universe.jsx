@@ -15,8 +15,10 @@ import { useStore } from '../state/useStore.js'
  */
 function IntroConstellations() {
   const index = useStore((s) => s.index)
+  const id = slides[index]?.id
+  const show = id === 'intro-syntax' || id === 'intro-sentry'
   return (
-    <group visible={index < 2}>
+    <group visible={show}>
       <LogoConstellation
         src="/logos/syntax.svg"
         fallbackText="Syntax"
