@@ -130,7 +130,7 @@ export const slides = [
     camera: {
       pos: [8000, 52000, 15000],
       target: [8000, -900, -15000], // === GALAXY.center
-      smoothTime: 3.2, // long, majestic pull-back
+      smoothTime: 2.2, // long, majestic pull-back (still slower than the hops)
     },
   },
 ]

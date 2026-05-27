@@ -20,9 +20,9 @@ export function CameraRig() {
     if (!controls.current) return
     // Per-slide pacing: the galaxy reveal sets a long smoothTime for a slow,
     // majestic pull-back; planet hops stay quicker.
-    controls.current.smoothTime = cam.smoothTime ?? 1.6
+    controls.current.smoothTime = cam.smoothTime ?? 1.0
     controls.current.setLookAt(...cam.pos, ...cam.target, true)
   }, [index])
 
-  return <CameraControls ref={controls} makeDefault smoothTime={1.6} />
+  return <CameraControls ref={controls} makeDefault smoothTime={1.0} />
 }
