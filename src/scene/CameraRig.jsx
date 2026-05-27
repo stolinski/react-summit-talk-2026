@@ -16,10 +16,13 @@ export function CameraRig() {
   const index = useStore((s) => s.index)
 
   useEffect(() => {
-    const { pos, target } = slides[index].camera
-    controls.current?.setLookAt(...pos, ...target, true)
+    const cam = slides[index].camera
+    if (!controls.current) return
+    // Per-slide pacing: the galaxy reveal sets a long smoothTime for a slow,
+    // majestic pull-back; planet hops stay quicker.
+    controls.current.smoothTime = cam.smoothTime ?? 1.6
+    controls.current.setLookAt(...cam.pos, ...cam.target, true)
   }, [index])
 
-  // Slow, weighty glides — long smoothTime so big moves feel cinematic, not snappy.
-  return <CameraControls ref={controls} makeDefault smoothTime={1.8} />
+  return <CameraControls ref={controls} makeDefault smoothTime={1.6} />
 }

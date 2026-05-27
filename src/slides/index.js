@@ -108,6 +108,10 @@ export const slides = [
     eyebrow: 'Now pull all the way back',
     title: 'And it’s one speck in a galaxy',
     body: 'The whole web platform spirals out around you. We spend careers on a single world — and yolo-install the rest.',
-    camera: { pos: [0, 11000, 5200], target: [0, -140, -3600] },
+    camera: {
+      pos: [0, 50000, 14000],
+      target: [0, -600, -16000],
+      smoothTime: 3.2, // long, majestic pull-back
+    },
   },
 ]

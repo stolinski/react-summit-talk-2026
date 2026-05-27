@@ -38,13 +38,14 @@ const fragmentShader = /* glsl */ `
 
 export function Galaxy({
   center = [0, 0, 0],
-  count = 150000,
-  radius = 6000,
+  count = 200000,
+  radius = 26000,
   branches = 5,
-  spinTurns = 1.25,
+  spinTurns = 1.4,
   insideColor = '#ffe2b0',
   outsideColor = '#3457d6',
 }) {
+  const coreRadius = radius * 0.03
   const group = useRef()
 
   const [positions, colors, scales] = useMemo(() => {
@@ -78,7 +79,7 @@ export function Galaxy({
     return [positions, colors, scales]
   }, [count, radius, branches, spinTurns, insideColor, outsideColor])
 
-  const uniforms = useMemo(() => ({ uSize: { value: 230 } }), [])
+  const uniforms = useMemo(() => ({ uSize: { value: 360 } }), [])
 
   // ~12 minutes per rotation: alive, never busy.
   useFrame((_, dt) => {
@@ -105,7 +106,7 @@ export function Galaxy({
 
       {/* Glowing galactic core. */}
       <mesh>
-        <sphereGeometry args={[180, 32, 32]} />
+        <sphereGeometry args={[coreRadius, 32, 32]} />
         <meshBasicMaterial color="#fff0cf" toneMapped={false} />
       </mesh>
     </group>

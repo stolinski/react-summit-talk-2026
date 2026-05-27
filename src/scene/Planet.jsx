@@ -1,6 +1,5 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { snoise } from '../shaders/snoise.js'
 import { SUN_POSITION } from './layout.js'
@@ -86,7 +85,6 @@ export function Planet({
   color = '#3b82f6',
   colorDeep,
   atmosphere,
-  label,
   freq = 2.4,
   spin = 0.01,
 }) {
@@ -132,20 +130,6 @@ export function Planet({
           depthWrite={false}
         />
       </mesh>
-
-      {label && (
-        <Text
-          position={[0, radius * 1.9, 0]}
-          fontSize={radius * 0.5}
-          color="#f8fafc"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={radius * 0.015}
-          outlineColor="#02030a"
-        >
-          {label}
-        </Text>
-      )}
     </group>
   )
 }

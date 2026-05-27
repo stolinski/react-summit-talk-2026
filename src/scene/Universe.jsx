@@ -14,7 +14,7 @@ export function Universe() {
       <Nebula />
 
       {/* Static distant stars filling the volume between system and galaxy. */}
-      <Stars radius={30000} depth={6000} count={4000} factor={40} saturation={0} fade speed={0} />
+      <Stars radius={120000} depth={20000} count={5000} factor={150} saturation={0} fade speed={0} />
 
       {/* The far, enormous galaxy — "the web." */}
       <Galaxy center={GALAXY.center} radius={GALAXY.radius} />

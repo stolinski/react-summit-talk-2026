@@ -1,16 +1,16 @@
 /**
  * Scale of the whole scene lives here.
  *
- * The trick that makes it feel real: the SOLAR SYSTEM is tiny and local (sun at
- * the origin, planets within ~130 units), while the GALAXY is enormous and far
- * away (radius 6000, centered ~3600 units off). From inside the system the
- * galaxy is a luminous band across the sky (like the Milky Way from Earth);
- * pull the camera way out and the entire system shrinks to an invisible speck
- * in one of the galaxy's arms.
+ * The solar system is TINY and absolute (sun at the origin, planets within ~130
+ * units). The galaxy is staggeringly larger and farther — radius 26,000, core
+ * ~16,000 units away — and the system sits inside one of its arms. So from the
+ * system the galaxy is just a faint band of stars across the sky (you cannot
+ * tell it's a giant spiral). Its true scale is hidden until the camera flies up
+ * out of the disk and looks back: that's the wow.
  */
 export const SUN_POSITION = [0, 0, 0]
 
 export const GALAXY = {
-  center: [0, -140, -3600],
-  radius: 6000,
+  center: [0, -600, -16000],
+  radius: 26000,
 }
