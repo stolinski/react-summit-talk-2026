@@ -18,7 +18,7 @@ function IntroConstellations() {
   const id = slides[index]?.id
   const show = id === 'intro-syntax' || id === 'intro-sentry'
   return (
-    <group visible={show}>
+    <group>
       <LogoConstellation
         src="/logos/syntax.svg"
         fallbackText="Syntax"
@@ -26,6 +26,7 @@ function IntroConstellations() {
         position={[-360, 420, 520]}
         size={170}
         density={0.32}
+        show={show}
       />
       <LogoConstellation
         src="/logos/sentry.svg"
@@ -34,6 +35,7 @@ function IntroConstellations() {
         position={[360, 420, 520]}
         size={170}
         density={0.7}
+        show={show}
       />
     </group>
   )

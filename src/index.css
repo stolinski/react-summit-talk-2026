@@ -1,6 +1,20 @@
+/* Display face for headings. Self-hosted so it works offline on conference
+   wifi — drop the file in public/fonts/ (see public/fonts/README.md). */
+@font-face {
+  font-family: 'Newake';
+  src: url('/fonts/Newake.woff2') format('woff2'),
+    url('/fonts/Newake.otf') format('opentype');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
   --accent: #38bdf8;
+  /* Set by Overlay.jsx on resize: min(innerWidth/1920, innerHeight/1080). The
+     whole DOM stage scales by this, so the deck is pixel-identical at any
+     resolution — design once at 1920×1080 and it fits everywhere. */
+  --stage-scale: 1;
 }
 
 * {
@@ -22,33 +36,42 @@ canvas {
   inset: 0;
 }
 
-/* The DOM layer floats over the canvas. It's click-through by default so you can
-   still drag to orbit the universe; only interactive children opt back in. */
+/* The readable DOM is laid out on a fixed 1920×1080 "stage" and scaled to fit
+   the viewport (transform: scale), so every size below is in 1080p design px
+   and the composition is identical at any resolution. The WebGL canvas stays
+   full-bleed behind it, so non-16:9 screens just show more universe — no bars.
+   Click-through by default; only interactive children opt back in. */
 .overlay {
   position: fixed;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform: translate(-50%, -50%) scale(var(--stage-scale));
+  transform-origin: center center;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 6vh 6vw;
+  padding: 72px 112px;
 }
 
 .card {
   pointer-events: auto;
-  max-width: 720px;
-  padding: 32px 36px;
+  max-width: 900px;
+  padding: 40px 46px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 22px;
   background: rgba(10, 14, 22, 0.72);
   backdrop-filter: blur(12px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
-  animation: rise 0.5s ease both;
+  /* small delay so the card lands as the camera arrives, not mid-flight */
+  animation: rise 0.5s ease 0.35s both;
 }
 
 /* Title slide: let the universe breathe, no frame. */
 .card--title {
-  max-width: 1000px;
+  max-width: 1400px;
   background: transparent;
   backdrop-filter: none;
   border: none;
@@ -56,43 +79,43 @@ canvas {
 }
 
 .eyebrow {
-  margin: 0 0 12px;
-  font-size: 0.8rem;
+  margin: 0 0 14px;
+  font-size: 1rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent);
 }
 
 .card h1 {
-  margin: 0 0 16px;
-  font-size: clamp(1.8rem, 5vw, 3.4rem);
+  margin: 0 0 18px;
+  font-family: 'Newake', ui-sans-serif, system-ui, sans-serif;
+  font-size: 3.6rem;
   line-height: 1.05;
-  letter-spacing: -0.02em;
   font-weight: 800;
   color: #f8fafc;
 }
 
 .card--title h1 {
-  font-size: clamp(2.5rem, 8vw, 6rem);
+  font-size: 8.5rem;
 }
 
 .body {
-  margin: 0 0 20px;
+  margin: 0 0 24px;
   max-width: 60ch;
-  font-size: clamp(1rem, 2vw, 1.4rem);
+  font-size: 1.6rem;
   line-height: 1.45;
   color: #cbd5e1;
 }
 
 .code {
   margin: 0;
-  padding: 18px 20px;
+  padding: 24px 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 14px;
   background: #0b1020;
   overflow: auto;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  font-size: 1.2rem;
+  line-height: 1.6;
   color: #e2e8f0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -100,43 +123,48 @@ canvas {
 .socials {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 4px 0;
+  gap: 14px;
+  margin: 6px 0;
 }
 
 .social {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  font-size: 1.25rem;
   font-weight: 600;
   color: #e2e8f0;
 }
 
 .demo {
-  margin-top: 20px;
+  margin-top: 26px;
 }
 
 .btn {
   pointer-events: auto;
-  padding: 12px 20px;
+  padding: 14px 24px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--accent);
   color: #04111b;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   cursor: pointer;
 }
 
+/* Modals/drawers use showModal() → they're promoted to the top layer, which is
+   NOT affected by the stage transform, so they size against the real viewport.
+   vmin keeps them scaling with resolution; a modal should cover the real screen. */
 .native-dialog {
-  max-width: 420px;
-  padding: 28px 32px;
+  max-width: min(90vw, 44vmin);
+  min-width: 320px;
+  padding: 3vmin 3.4vmin;
   border: none;
-  border-radius: 16px;
+  border-radius: 1.6vmin;
   background: #0b1020;
   color: #e2e8f0;
+  font-size: 1.7vmin;
 }
 
 .native-dialog h3 {
@@ -148,14 +176,159 @@ canvas {
   backdrop-filter: blur(4px);
 }
 
+/* The drawer: a modal <dialog> pinned to the right edge that animates both
+   ways. translate moves it; allow-discrete on display/overlay keeps it in the
+   top layer long enough to animate OUT (the part that used to need JS). */
+.drawer {
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(92vw, 40vmin);
+  min-width: 300px;
+  margin: 0 0 0 auto; /* pin to the right edge */
+  padding: 3.4vmin 3.8vmin;
+  border: none;
+  border-radius: 1.6vmin 0 0 1.6vmin;
+  background: #0b1020;
+  color: #e2e8f0;
+  font-size: 1.7vmin;
+
+  translate: 100% 0; /* off-screen right when closed */
+  transition: translate 0.35s ease, display 0.35s allow-discrete,
+    overlay 0.35s allow-discrete;
+}
+
+.drawer[open] {
+  translate: 0 0; /* slid in */
+}
+
+/* the state to animate FROM on first open */
+@starting-style {
+  .drawer[open] {
+    translate: 100% 0;
+  }
+}
+
+.drawer h3 {
+  margin-top: 0;
+}
+
+.drawer::backdrop {
+  background: rgba(2, 6, 12, 0);
+  backdrop-filter: blur(4px);
+  transition: background 0.35s ease, display 0.35s allow-discrete,
+    overlay 0.35s allow-discrete;
+}
+
+.drawer[open]::backdrop {
+  background: rgba(2, 6, 12, 0.6);
+}
+
+@starting-style {
+  .drawer[open]::backdrop {
+    background: rgba(2, 6, 12, 0);
+  }
+}
+
+/* Code-hero slides: the code is the star, centered on the stage; the planet
+   behind the frosted card is just a backdrop glow. */
+.overlay--center {
+  justify-content: center;
+  align-items: center;
+}
+
+.card--code {
+  max-width: 1080px;
+  width: max-content;
+}
+
+.card--code h1 {
+  font-size: 2.6rem;
+  margin-bottom: 20px;
+}
+
+.card--code .code {
+  font-size: 1.95rem;
+  line-height: 1.6;
+}
+
+/* Zero-dependency highlighting tokens (see CodeBlock.jsx). */
+.code .tok-comment {
+  color: #5b6b7f;
+  font-style: italic;
+}
+.code .tok-string {
+  color: #f0a868;
+}
+.code .tok-tag {
+  color: #7dd3fc;
+}
+.code .tok-num {
+  color: #fbbf24;
+}
+
+/* Scroll-scrub gallery: each card animates off its own position in the
+   scroller via animation-timeline: view(). Zero JS. */
+.scrubber {
+  display: flex;
+  gap: 30px;
+  width: 820px;
+  padding-inline: calc(50% - 130px); /* lets the first & last card reach center */
+  padding-block: 40px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  perspective: 1400px;
+  scrollbar-width: none;
+}
+.scrubber::-webkit-scrollbar {
+  display: none;
+}
+
+.scrub-card {
+  flex: 0 0 260px;
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  border-radius: 22px;
+  font-size: 3.6rem;
+  font-weight: 800;
+  color: #04111b;
+  background: linear-gradient(
+    155deg,
+    hsl(calc(var(--i) * 42) 85% 66%),
+    hsl(calc(var(--i) * 42 + 30) 80% 52%)
+  );
+
+  animation: scrub linear both;
+  animation-timeline: view(inline);
+}
+
+@keyframes scrub {
+  0% {
+    scale: 0.6;
+    opacity: 0.3;
+    rotate: y -42deg;
+  }
+  50% {
+    scale: 1;
+    opacity: 1;
+    rotate: y 0deg;
+  }
+  100% {
+    scale: 0.6;
+    opacity: 0.3;
+    rotate: y 42deg;
+  }
+}
+
 .hud {
-  position: fixed;
-  top: 24px;
-  right: 32px;
-  left: 32px;
+  position: absolute;
+  top: 40px;
+  right: 56px;
+  left: 56px;
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 1rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #64748b;

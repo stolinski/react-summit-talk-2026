@@ -26,11 +26,12 @@ const vertexShader = /* glsl */ `
 
 const fragmentShader = /* glsl */ `
   varying vec3 vColor;
+  uniform float uOpacity;
   void main() {
     float d = distance(gl_PointCoord, vec2(0.5));
     float a = smoothstep(0.5, 0.0, d);
     a = pow(a, 1.5);
-    gl_FragColor = vec4(vColor, a);
+    gl_FragColor = vec4(vColor, a * uOpacity);
   }
 `
 
@@ -98,6 +99,7 @@ export function LogoConstellation({
   size = 200,
   pointSize = 95,
   density = 0.4,
+  show = true,
 }) {
   const [geom, setGeom] = useState(null)
 
@@ -119,17 +121,27 @@ export function LogoConstellation({
     }
   }, [src, fallbackText, size, color, density])
 
-  const uniforms = useMemo(() => ({ uSize: { value: pointSize } }), [pointSize])
+  const uniforms = useMemo(
+    () => ({ uSize: { value: pointSize }, uOpacity: { value: 0 } }),
+    [pointSize]
+  )
 
   // Extremely slow float so the constellation feels alive without distracting.
   const group = useRef()
   const seed = useMemo(() => Math.random() * 100, [])
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!group.current) return
     const t = clock.elapsedTime + seed
     group.current.position.y = position[1] + Math.sin(t * 0.12) * 3
     group.current.rotation.x = Math.sin(t * 0.08) * 0.025
     group.current.rotation.y = Math.cos(t * 0.06) * 0.03
+    // Fade the constellation in/out instead of popping when the slide changes.
+    uniforms.uOpacity.value = THREE.MathUtils.damp(
+      uniforms.uOpacity.value,
+      show ? 1 : 0,
+      5,
+      delta
+    )
   })
 
   if (!geom) return null

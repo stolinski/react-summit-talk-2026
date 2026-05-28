@@ -1,4 +1,6 @@
 import { DialogDemo } from './demos/DialogDemo.jsx'
+import { DrawerDemo } from './demos/DrawerDemo.jsx'
+import { ScrollScrubDemo } from './demos/ScrollScrubDemo.jsx'
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -22,7 +24,6 @@ export const slides = [
   {
     id: 'title',
     kicker: 'Departure',
-    eyebrow: 'A talk by Scott Tolinski',
     title: 'This Component Could Have Been A Div',
     body: 'I’m your guide to the world outside of React.',
     planet: {
@@ -67,9 +68,7 @@ export const slides = [
   {
     id: 'native-html',
     kicker: 'Native HTML',
-    eyebrow: 'First neighbor',
-    title: 'Planet of Native HTML',
-    body: 'You installed a library for this. The platform shipped it years ago.',
+    title: 'The modal you keep installing',
     planet: {
       position: [-58, 3, 36],
       radius: 3.0,
@@ -80,14 +79,29 @@ export const slides = [
     },
     camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
     code: [
-      '// What people install:',
-      "import Modal from 'react-modal'",
-      '',
-      '// What the platform already gives you:',
       '<dialog ref={ref}>…</dialog>',
+      '',
       'ref.current.showModal()',
     ].join('\n'),
     demo: DialogDemo,
+  },
+  {
+    id: 'drawer',
+    kicker: 'Native HTML',
+    title: 'A drawer that slides both ways',
+    // Reuses the native-html waypoint on purpose: within a planet the camera
+    // stays PARKED and the cards rapid-fire. We only fly when we change planets.
+    camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
+    code: [
+      '<dialog class="drawer">…</dialog>',
+      '',
+      '.drawer       { translate: 100% 0 }',
+      '.drawer[open] { translate: 0 }',
+      '',
+      '@starting-style { .drawer[open] { translate: 100% 0 } }',
+      '/* allow-discrete → it animates OUT too */',
+    ].join('\n'),
+    demo: DrawerDemo,
   },
   {
     id: 'css-nebula',
@@ -104,6 +118,26 @@ export const slides = [
       freq: 2.0,
     },
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+  },
+  {
+    id: 'scroll-scrub',
+    kicker: 'CSS',
+    title: 'Scroll-driven animation',
+    // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.card {',
+      '  animation: scrub linear both;',
+      '  animation-timeline: view(inline);',
+      '}',
+      '',
+      '@keyframes scrub {',
+      '  0%   { scale: .6; rotate: y -42deg }',
+      '  50%  { scale: 1;  rotate: y 0 }',
+      '  100% { scale: .6; rotate: y 42deg }',
+      '}',
+    ].join('\n'),
+    demo: ScrollScrubDemo,
   },
   {
     id: 'web-apis',
