@@ -1,6 +1,10 @@
 import { DialogDemo } from './demos/DialogDemo.jsx'
 import { DrawerDemo } from './demos/DrawerDemo.jsx'
 import { ScrollScrubDemo } from './demos/ScrollScrubDemo.jsx'
+import { CounterDemo } from './demos/CounterDemo.jsx'
+import { SiblingIndexDemo } from './demos/SiblingIndexDemo.jsx'
+import { CarouselDemo } from './demos/CarouselDemo.jsx'
+import { StickyDemo } from './demos/StickyDemo.jsx'
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -153,6 +157,73 @@ export const slides = [
       '  gap: 1rem;',
       '}',
     ].join('\n'),
+  },
+  {
+    id: 'counter',
+    kicker: 'CSS',
+    title: 'Numbers that count themselves',
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '@property --n {',
+      '  syntax: "<integer>";',
+      '  initial-value: 0;',
+      '}',
+      '',
+      '.stat        { counter-reset: n var(--n);',
+      '               animation: count 3s both }',
+      '.stat::after { content: counter(n) }',
+      '',
+      '@keyframes count { to { --n: 1000000 } }',
+    ].join('\n'),
+    demo: CounterDemo,
+  },
+  {
+    id: 'sibling-index',
+    kicker: 'CSS',
+    title: 'Every element knows its index',
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.bar {',
+      '  height: calc(sibling-index() * 28px);',
+      '  background: hsl(calc(sibling-index() * 26) 85% 62%);',
+      '  animation-delay: calc(sibling-index() * 70ms);',
+      '}',
+      '',
+      '/* no style="--i" anywhere */',
+    ].join('\n'),
+    demo: SiblingIndexDemo,
+  },
+  {
+    id: 'carousel',
+    kicker: 'CSS',
+    title: 'The carousel builds its own controls',
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.carousel { scroll-marker-group: after }',
+      '',
+      '.slide::scroll-marker { content: "" }  /* dots */',
+      '.slide::scroll-marker:target-current { background: #fff }',
+      '',
+      '.carousel::scroll-button(right) { content: "›" }  /* arrows */',
+    ].join('\n'),
+    demo: CarouselDemo,
+  },
+  {
+    id: 'sticky-state',
+    kicker: 'CSS',
+    title: 'A header that knows it’s stuck',
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.header {',
+      '  position: sticky; top: 0;',
+      '  container-type: scroll-state;',
+      '}',
+      '',
+      '@container scroll-state(stuck: top) {',
+      '  .title { box-shadow: 0 12px 30px #000 }',
+      '}',
+    ].join('\n'),
+    demo: StickyDemo,
   },
   {
     id: 'web-apis',
