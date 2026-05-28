@@ -140,6 +140,21 @@ export const slides = [
     demo: ScrollScrubDemo,
   },
   {
+    id: 'masonry',
+    kicker: 'CSS',
+    title: 'The layout that needed a library',
+    // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.gallery {',
+      '  display: grid;',
+      '  grid-template-columns: repeat(4, 1fr);',
+      '  grid-template-rows: masonry;',
+      '  gap: 1rem;',
+      '}',
+    ].join('\n'),
+  },
+  {
     id: 'web-apis',
     kicker: 'Web APIs',
     eyebrow: 'Out at the edge',

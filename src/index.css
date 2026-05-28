@@ -2,7 +2,8 @@
    wifi — drop the file in public/fonts/ (see public/fonts/README.md). */
 @font-face {
   font-family: 'Newake';
-  src: url('/fonts/Newake.woff2') format('woff2'),
+  src: local('Newake'),
+    url('/fonts/Newake.woff2') format('woff2'),
     url('/fonts/Newake.otf') format('opentype');
   font-weight: 400 900;
   font-display: swap;
