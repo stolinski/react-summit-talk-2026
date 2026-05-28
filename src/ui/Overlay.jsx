@@ -19,6 +19,7 @@ export function Overlay() {
   // A slide with code is a "code-hero" slide: the code centers on screen and
   // the planet behind the frosted card becomes a backdrop glow, not the subject.
   const codeHero = Boolean(slide.code)
+  const isStart = slide.id === 'start'
 
   // Fit the fixed 1920×1080 DOM stage to any viewport so the deck looks
   // identical at every projector resolution. The canvas stays full-bleed behind.
@@ -34,7 +35,9 @@ export function Overlay() {
   }, [])
 
   return (
-    <div className={`overlay ${codeHero ? 'overlay--center' : ''}`}>
+    <>
+      <div className="blackout" data-show={isStart} />
+      <div className={`overlay ${codeHero ? 'overlay--center' : ''}`}>
       <div
         key={slide.id}
         className={`card ${slide.id === 'title' ? 'card--title' : ''} ${
@@ -67,6 +70,7 @@ export function Overlay() {
           {index + 1} / {count}
         </span>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }

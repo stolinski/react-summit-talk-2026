@@ -37,6 +37,22 @@ canvas {
   inset: 0;
 }
 
+/* Black pre-roll cover: holds the screen black on the 'start' slide so the
+   opening fly-in only happens once you hit next. Sits above the canvas and the
+   overlay (incl. the HUD). */
+.blackout {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.blackout[data-show='true'] {
+  opacity: 1;
+}
+
 /* The readable DOM is laid out on a fixed 1920×1080 "stage" and scaled to fit
    the viewport (transform: scale), so every size below is in 1080p design px
    and the composition is identical at any resolution. The WebGL canvas stays

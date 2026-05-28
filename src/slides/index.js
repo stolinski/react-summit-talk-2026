@@ -26,6 +26,13 @@ import { StickyDemo } from './demos/StickyDemo.jsx'
  */
 export const slides = [
   {
+    id: 'start',
+    // Black pre-roll: the screen stays black on load (see .blackout in
+    // Overlay.jsx) so the opening fly-in only fires when you hit next. The
+    // camera sits pulled back; advancing dollies in to the title.
+    camera: { pos: [78, 16, 66], target: [34, 1, 22] },
+  },
+  {
     id: 'title',
     kicker: 'Departure',
     title: 'This Component Could Have Been A Div',
@@ -38,7 +45,7 @@ export const slides = [
       atmosphere: '#9cd0ff',
       freq: 2.6,
     },
-    camera: { pos: [48, 6, 40], target: [34, 1, 22] },
+    camera: { pos: [48, 6, 40], target: [34, 1, 22], smoothTime: 1.4 },
   },
   {
     id: 'intro-syntax',
