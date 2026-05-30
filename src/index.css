@@ -18,6 +18,14 @@
   --stage-scale: 1;
 }
 
+/* Registered so the per-scene accent (set on .overlay by Overlay.jsx) can
+   CROSS-FADE between scenes instead of snapping — premium cohesion. */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #38bdf8;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -71,19 +79,61 @@ canvas {
   flex-direction: column;
   justify-content: flex-end;
   padding: 72px 112px;
+  /* the accent (set per slide) eases between scenes */
+  transition: --accent 0.6s ease;
 }
 
 .card {
   pointer-events: auto;
   max-width: 900px;
   padding: 40px 46px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 22px;
-  background: rgba(10, 14, 22, 0.72);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  /* Frosted glass with a faint lit top edge — premium depth without flicker. */
+  background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0) 42%
+    ),
+    rgba(10, 14, 22, 0.64);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    /* top highlight */ 0 0 0 1px rgba(255, 255, 255, 0.04),
+    /* crisp hairline */ 0 40px 90px -22px rgba(0, 0, 0, 0.7),
+    /* deep ambient */ 0 14px 34px -14px rgba(0, 0, 0, 0.55),
+    /* scene-colored halo */ 0 24px 80px -30px
+      color-mix(in srgb, var(--accent) 30%, transparent);
   /* small delay so the card lands as the camera arrives, not mid-flight */
   animation: rise 0.5s ease 0.35s both;
+}
+
+/* Staggered content reveal: the panel lands (rise), then eyebrow → title →
+   body → code/demo focus and settle in sequence. Card is keyed by slide id, so
+   this replays on every change. */
+.card > * {
+  animation: rise-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.card > .eyebrow {
+  animation-delay: 0.42s;
+}
+.card > h1 {
+  animation-delay: 0.5s;
+}
+.card > .body {
+  animation-delay: 0.6s;
+}
+.card > .socials,
+.card > .code,
+.card > .demo {
+  animation-delay: 0.68s;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(6px);
+  }
 }
 
 /* Title slide: let the universe breathe, no frame. */
@@ -129,7 +179,10 @@ canvas {
   padding: 24px 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  background: #0b1020;
+  /* subtle depth: a hair lighter at the top, faint inner top highlight */
+  background: linear-gradient(180deg, #0e1426, #0a0f1e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 30px -16px rgba(0, 0, 0, 0.6);
   overflow: auto;
   font-size: 1.2rem;
   line-height: 1.6;
@@ -503,6 +556,312 @@ canvas {
   background: rgba(255, 255, 255, 0.08);
   padding: 1px 6px;
   border-radius: 5px;
+}
+
+/* Multi-detent bottom sheet (the `vaul` job): the peek / half / full rest
+   positions are CSS scroll-snap points, so native momentum scrolling IS the
+   drag. The backdrop dims via a scroll-driven animation. No gesture library,
+   no open/half/full state in JS. `timeline-scope` lets the dim (a sibling)
+   read the scroller's named scroll-timeline. */
+.bs-device {
+  position: relative;
+  width: var(--bs-w);
+  height: var(--bs-h);
+  border-radius: 36px;
+  overflow: hidden;
+  background: #0a0f1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 6px #05070d, 0 26px 64px rgba(0, 0, 0, 0.55);
+  timeline-scope: --bs;
+}
+
+/* Decorative app behind the sheet. */
+.bs-app {
+  position: absolute;
+  inset: 0;
+  padding: 20px 18px;
+}
+.bs-app-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.bs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.bs-tile {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: linear-gradient(
+    155deg,
+    hsl(calc(var(--i) * 48) 70% 58%),
+    hsl(calc(var(--i) * 48 + 30) 65% 44%)
+  );
+}
+
+/* The scroll-snap sheet, overlaid on the app. */
+.bs-scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scroll-timeline: --bs y;
+}
+.bs-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dims the app as the sheet rises — pure scroll-driven animation. Sits between
+   the app and the (transparent) sheet rungs, so it only shows above the panel. */
+.bs-dim {
+  position: absolute;
+  inset: 0;
+  background: #02040a;
+  animation: bs-dim linear both;
+  animation-timeline: --bs;
+}
+@keyframes bs-dim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.6;
+  }
+}
+
+/* Each rung's top edge is a rest position: peek · half · full. */
+.bs-zone {
+  scroll-snap-align: start;
+}
+
+.bs-panel {
+  position: relative;
+  z-index: 1;
+  padding: 12px 22px 24px;
+  background: #141a2b;
+  border-radius: 26px 26px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
+  color: #e8eefc;
+}
+.bs-grip {
+  display: block;
+  width: 44px;
+  height: 5px;
+  margin: 6px auto 18px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+  cursor: pointer;
+}
+.bs-panel h4 {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.bs-share {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.bs-app-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.7rem;
+  color: #aab6cf;
+}
+.bs-app-icon b {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 1.25rem;
+  color: #05070d;
+  background: linear-gradient(
+    155deg,
+    hsl(calc(var(--i) * 60) 80% 64%),
+    hsl(calc(var(--i) * 60 + 28) 72% 50%)
+  );
+}
+.bs-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bs-list li {
+  padding: 15px 6px;
+  font-size: 1.05rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Anchor positioning (the Floating UI job): the menu is tied to the button with
+   `position-anchor` and flips sides via `position-try-fallbacks` when it would
+   run off the stage. The drag is JS; the positioning is 100% CSS. */
+.anchor-stage {
+  position: relative;
+  width: 560px;
+  height: 360px;
+  border-radius: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: radial-gradient(
+      120% 120% at 50% 0%,
+      rgba(56, 189, 248, 0.08),
+      transparent 60%
+    ),
+    #0b1020;
+  overflow: hidden;
+}
+.anchor-chip {
+  position: absolute;
+  anchor-name: --chip;
+  width: 132px;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #04111b;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: grab;
+  touch-action: none; /* let the drag own the gesture, not the scroller */
+  user-select: none;
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.35);
+}
+.anchor-chip:active {
+  cursor: grabbing;
+}
+.anchor-pop {
+  /* anchored to the button — no JS measures or positions this */
+  position: absolute;
+  position-anchor: --chip;
+  position-area: block-end span-inline-end; /* below, left-aligned to the button */
+  position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  margin: 8px 0;
+
+  width: 184px;
+  padding: 8px;
+  list-style: none;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #151b2d;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  color: #e8eefc;
+}
+.anchor-pop li {
+  padding: 11px 14px;
+  border-radius: 9px;
+  font-size: 1.05rem;
+}
+.anchor-pop li:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.anchor-sep {
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fca5a5;
+}
+
+/* Supply-chain contrast: the same dropdown as an install vs. as the platform.
+   Left = a dependency tree you inherit; right = CSS that ships with no deps. */
+.dep {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 26px;
+}
+.dep-col {
+  align-self: stretch;
+  padding: 24px 26px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0b1020;
+}
+.dep-col--lib {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.08), #0b1020 60%);
+}
+.dep-col--web {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08), #0b1020 60%);
+}
+.dep-head {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+.dep-cmd {
+  display: block;
+  margin-bottom: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+.dep-tree {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  color: #94a3b8;
+}
+.dep-tree li {
+  padding: 4px 0;
+  padding-left: calc(var(--depth) * 22px);
+}
+.dep-tree li::before {
+  content: '└─ ';
+  color: #64748b;
+}
+.dep-tree li:first-child {
+  color: #e2e8f0;
+}
+.dep-tree li:first-child::before {
+  content: '';
+}
+.dep-code {
+  margin: 0 0 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #7dd3fc;
+  white-space: pre;
+}
+.dep-foot {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.dep-foot--bad {
+  color: #fca5a5;
+}
+.dep-foot--good {
+  color: #7ee7c7;
+}
+.dep-vs {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* A slide that opts into the centered stage (overlay--center) without being a
+   code-hero slide — for a wide centerpiece demo. */
+.card--wide {
+  max-width: 1180px;
+  width: max-content;
 }
 
 .hud {

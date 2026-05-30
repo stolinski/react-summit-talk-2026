@@ -5,6 +5,9 @@ import { CounterDemo } from './demos/CounterDemo.jsx'
 import { SiblingIndexDemo } from './demos/SiblingIndexDemo.jsx'
 import { CarouselDemo } from './demos/CarouselDemo.jsx'
 import { StickyDemo } from './demos/StickyDemo.jsx'
+import { BottomSheetDemo } from './demos/BottomSheetDemo.jsx'
+import { AnchorFlipDemo } from './demos/AnchorFlipDemo.jsx'
+import { DependencyContrastDemo } from './demos/DependencyContrastDemo.jsx'
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -22,6 +25,10 @@ import { StickyDemo } from './demos/StickyDemo.jsx'
  *    camera  { pos, target, smoothTime? }   where/how the camera flies
  *    planet  { position, radius, color, colorDeep, atmosphere, freq }
  *    eyebrow / title / body / code / demo / socials / kicker   panel content
+ *    center  true → centered stage without code (wide centerpiece demo)
+ *    accent  '#rrggbb' → override the per-scene accent (else planet/kicker)
+ *    support { chrome, safari, firefox: true | 'partial' | false } → 3D engine
+ *            orbs (lit = supported, dim = not). Omit to hide. See BrowserSupport.
  * ─────────────────────────────────────────────────────────────────────────
  */
 export const slides = [
@@ -80,6 +87,7 @@ export const slides = [
     id: 'native-html',
     kicker: 'Native HTML',
     title: 'The modal you keep installing',
+    support: { chrome: true, safari: true, firefox: true },
     planet: {
       position: [-58, 3, 36],
       radius: 3.0,
@@ -134,6 +142,7 @@ export const slides = [
     id: 'scroll-scrub',
     kicker: 'CSS',
     title: 'Scroll-driven animation',
+    support: { chrome: true, safari: false, firefox: 'partial' },
     // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
@@ -222,6 +231,24 @@ export const slides = [
     demo: StickyDemo,
   },
   {
+    id: 'bottom-sheet',
+    kicker: 'CSS',
+    title: 'A sheet that snaps to size',
+    // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.sheet {',
+      '  overflow-y: auto;',
+      '  scroll-snap-type: y mandatory;',
+      '  overscroll-behavior: contain;',
+      '}',
+      '',
+      '/* one rung per resting position */',
+      '.detent { scroll-snap-align: start }',
+    ].join('\n'),
+    demo: BottomSheetDemo,
+  },
+  {
     id: 'web-apis',
     kicker: 'Web APIs',
     eyebrow: 'Out at the edge',
@@ -238,11 +265,116 @@ export const slides = [
     camera: { pos: [101, 13, -26], target: [118, 5, -46] },
   },
   {
+    id: 'anchor-flip',
+    kicker: 'Web APIs',
+    title: 'A menu that flips to stay on screen',
+    support: { chrome: true, safari: false, firefox: false },
+    // Parked at the Web APIs planet: same waypoint as web-apis, card swaps.
+    camera: { pos: [101, 13, -26], target: [118, 5, -46] },
+    code: [
+      '.btn  { anchor-name: --btn }',
+      '',
+      '.menu {',
+      '  position-anchor: --btn;',
+      '  position-area: block-end;',
+      '  position-try-fallbacks:',
+      '    flip-block, flip-inline;',
+      '}',
+      '',
+      '/* the menu flips to stay on screen — no JS */',
+    ].join('\n'),
+    demo: AnchorFlipDemo,
+  },
+  /* ───────────────────────── CLOSING MOVEMENT: AGENTS ─────────────────────────
+   *  The "so what" — placed BEFORE the galaxy so the pull-back stays the final
+   *  payoff and isn't spoiled (from this "whole system" vista the galaxy is still
+   *  just a faint band; see scene/layout.js scale separation). AI is the meaning
+   *  of the tour, not a tangent: agents default to the average (div soup + a
+   *  dependency), so your platform knowledge is the ceiling on what they ship —
+   *  and a vote on the next corpus. Supply chain is the load-bearing middle.
+   *
+   *  COPY IS PLACEHOLDER — Scott rewrites. Parked at the system overview (a
+   *  deliberate rhyme with the early `system` slide); `ai-intro` flies back here
+   *  from the Web APIs planet, then `galaxy` does the big pull-back from here.
+   * ────────────────────────────────────────────────────────────────────────── */
+  {
+    id: 'ai-intro',
+    kicker: 'Agents',
+    title: 'You don’t write most of this anymore',
+    body: 'Agents write a lot of our HTML and CSS now. The only question left is what they reach for.',
+    // Pull back out of the Web APIs planet to the whole-system vista.
+    camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
+  },
+  {
+    id: 'ai-average',
+    kicker: 'Agents',
+    eyebrow: 'Regression to the mean',
+    title: 'AI writes the average of the web',
+    body: 'The average is a div, an onClick, and a dependency for the rest. A model returns the most common answer — and the most common answer is the old one.',
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+  {
+    id: 'ai-supply-chain',
+    kicker: 'Agents',
+    eyebrow: 'Every import is a trust decision',
+    title: 'The same menu, two supply chains',
+    center: true,
+    demo: DependencyContrastDemo,
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+  {
+    id: 'ai-excuse',
+    kicker: 'Agents',
+    eyebrow: 'The trade-off collapsed',
+    title: 'The reason you installed it is gone',
+    body: 'You pulled in the library because writing it yourself was the expensive part. It isn’t anymore. The dependency stopped being a trade and became risk you kept for nothing.',
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+  {
+    id: 'ai-other-edge',
+    kicker: 'Agents',
+    eyebrow: 'The other edge',
+    title: 'Point it at nothing and it installs',
+    body: 'Left to its average, an agent reaches for the registry — and will confidently import a package that doesn’t exist, a name attackers now register to catch the guess. The same tool that deletes dependencies will add a hostile one.',
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+  {
+    id: 'ai-defaults',
+    kicker: 'Agents',
+    title: 'You write its defaults',
+    body: 'You can’t approve what you can’t recognize.',
+    code: [
+      '# CLAUDE.md / .cursorrules',
+      '',
+      'Prefer the platform over packages:',
+      '  <dialog>        over a modal library',
+      '  :has()          over state',
+      '  anchor + try    over Floating UI',
+      '  scroll timeline over scroll listeners',
+      '',
+      'No new dependency without asking first.',
+    ].join('\n'),
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+  {
+    id: 'ai-close',
+    kicker: 'Agents',
+    eyebrow: 'What you ship is what it learns next',
+    title: 'This component could have been a div',
+    body: 'Now you’re the one who decides it is. Every component you write becomes the next model’s training data — ship the platform and you raise the floor for everyone.',
+    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+  },
+
+  /* ── THE PAYOFF ── The final pull-back. Stays last; nothing parked on top of
+   *  it. The huge zoom from the system vista to GALAXY.center is the reveal, and
+   *  the sign-off (socials) lands on it. */
+  {
     id: 'galaxy',
     kicker: 'The web',
     eyebrow: 'Now pull all the way back',
     title: 'And it’s one speck in a galaxy',
     body: 'The whole web platform spirals out around you. We spend careers on a single world — and yolo-install the rest.',
+    socials: ['@stolinski', '@syntaxfm'],
     camera: {
       pos: [8000, 52000, 15000],
       target: [8000, -900, -15000], // === GALAXY.center

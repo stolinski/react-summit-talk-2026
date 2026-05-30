@@ -3,6 +3,19 @@ import { useStore } from '../state/useStore.js'
 import { slides } from '../slides/index.js'
 import { CodeBlock } from './CodeBlock.jsx'
 
+// Per-scene accent so the UI feels art-directed to each world. A planet slide
+// uses its own atmosphere; parked demo slides fall back to their cluster's
+// color (by kicker) so they match the planet they're orbiting. A slide can set
+// `accent` to override. The value eases between scenes (see @property --accent).
+const SCENE_ACCENT = {
+  'Native HTML': '#ffd27a',
+  CSS: '#d9a8ff',
+  'Web APIs': '#8ff2ff',
+  Agents: '#9cd0ff',
+}
+const accentFor = (slide) =>
+  slide.accent || slide.planet?.atmosphere || SCENE_ACCENT[slide.kicker] || '#38bdf8'
+
 /**
  * The readable layer. Everything legible — titles, code, live demos — is real
  * DOM floating over the WebGL canvas (crisp on any projector, accessible,
@@ -19,6 +32,9 @@ export function Overlay() {
   // A slide with code is a "code-hero" slide: the code centers on screen and
   // the planet behind the frosted card becomes a backdrop glow, not the subject.
   const codeHero = Boolean(slide.code)
+  // A slide can also opt into the centered stage without code (e.g. a wide
+  // centerpiece demo) via `center: true`.
+  const centered = codeHero || Boolean(slide.center)
   const isStart = slide.id === 'start'
 
   // Fit the fixed 1920×1080 DOM stage to any viewport so the deck looks
@@ -37,12 +53,15 @@ export function Overlay() {
   return (
     <>
       <div className="blackout" data-show={isStart} />
-      <div className={`overlay ${codeHero ? 'overlay--center' : ''}`}>
+      <div
+        className={`overlay ${centered ? 'overlay--center' : ''}`}
+        style={{ '--accent': accentFor(slide) }}
+      >
       <div
         key={slide.id}
         className={`card ${slide.id === 'title' ? 'card--title' : ''} ${
           codeHero ? 'card--code' : ''
-        }`}
+        } ${slide.center && !codeHero ? 'card--wide' : ''}`}
       >
         {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}
         <h1>{slide.title}</h1>

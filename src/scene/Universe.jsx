@@ -4,6 +4,7 @@ import { Nebula } from './Nebula.jsx'
 import { Sun } from './Sun.jsx'
 import { Planet } from './Planet.jsx'
 import { LogoConstellation } from './LogoConstellation.jsx'
+import { BrowserSupport } from './BrowserSupport.jsx'
 import { GALAXY } from './layout.js'
 import { slides } from '../slides/index.js'
 import { useStore } from '../state/useStore.js'
@@ -59,6 +60,9 @@ export function Universe() {
       {slides.map((s) => (s.planet ? <Planet key={s.id} {...s.planet} /> : null))}
 
       <IntroConstellations />
+
+      {/* 3D browser-support readout (per-slide `support` field). */}
+      <BrowserSupport />
     </>
   )
 }

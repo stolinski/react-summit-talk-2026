@@ -94,13 +94,50 @@ const surfaceFrag = /* glsl */ `
 
 const atmoFrag = /* glsl */ `
   uniform vec3 uAtmo;
+  uniform vec3 uLightDir;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   void main() {
     // High-power fresnel => energy concentrated right at the limb (a thin rim),
     // so it's an atmosphere, not a filled disc.
-    float fres = pow(1.0 - max(dot(normalize(vNormalW), normalize(vViewDir)), 0.0), 5.0);
-    gl_FragColor = vec4(uAtmo, fres * 0.55);
+    vec3 n = normalize(vNormalW);
+    float fres = pow(1.0 - max(dot(n, normalize(vViewDir)), 0.0), 5.0);
+    // Forward scatter: the rim glows much brighter where the limb faces the sun
+    // and fades into the night side — a real day/night atmosphere, not a ring.
+    float sunFacing = smoothstep(-0.35, 0.7, dot(n, normalize(uLightDir)));
+    gl_FragColor = vec4(uAtmo, fres * mix(0.18, 0.95, sunFacing));
+  }
+`
+
+// A slow cloud deck — patchy fbm, lit by the same sun, fading on the night
+// side. It rotates a touch faster than the surface for a parallax that reads as
+// a living planet. (Mesh rotation only — no per-frame noise churn → no flicker.)
+const cloudFrag = /* glsl */ `
+  uniform vec3 uAtmo;
+  uniform vec3 uLightDir;
+  uniform float uFreq;
+  varying vec3 vNormalW;
+  varying vec3 vViewDir;
+  varying vec3 vPos;
+  ${snoise}
+  void main() {
+    vec3 dir = normalize(vPos);
+    // broad masses + finer wisps
+    float c = fbm(dir * uFreq * 1.5) + 0.5 * fbm(dir * uFreq * 3.6);
+    c /= 1.5;
+    float cover = smoothstep(0.18, 0.62, c);
+    if (cover < 0.002) discard;
+
+    vec3 n = normalize(vNormalW);
+    float NdotL = dot(n, normalize(uLightDir));
+    float day = clamp((NdotL + 0.25) / 1.25, 0.0, 1.0);
+    day *= day;
+
+    vec3 col = mix(uAtmo * 0.35, vec3(1.0, 0.98, 0.94), day);
+    // soften the silhouette edge so clouds don't hard-cut the limb
+    float edge = smoothstep(0.0, 0.35, max(dot(n, normalize(vViewDir)), 0.0));
+    float alpha = cover * (0.12 + 0.88 * day) * edge;
+    gl_FragColor = vec4(col, alpha * 0.85);
   }
 `
 
@@ -115,28 +152,49 @@ export function Planet({
   specular = 0.6,
 }) {
   const surface = useRef()
+  const clouds = useRef()
 
-  const surfaceUniforms = useMemo(() => {
-    const lightDir = new THREE.Vector3(...SUN_POSITION)
-      .sub(new THREE.Vector3(...position))
-      .normalize()
-    return {
+  const lightDir = useMemo(
+    () =>
+      new THREE.Vector3(...SUN_POSITION)
+        .sub(new THREE.Vector3(...position))
+        .normalize(),
+    [position]
+  )
+
+  const surfaceUniforms = useMemo(
+    () => ({
       uColor: { value: new THREE.Color(color) },
       uColorDeep: { value: new THREE.Color(colorDeep ?? color).multiplyScalar(0.35) },
       uAtmo: { value: new THREE.Color(atmosphere ?? color) },
       uLightDir: { value: lightDir },
       uFreq: { value: freq },
       uSpecular: { value: specular },
-    }
-  }, [position, color, colorDeep, atmosphere, freq, specular])
+    }),
+    [lightDir, color, colorDeep, atmosphere, freq, specular]
+  )
 
   const atmoUniforms = useMemo(
-    () => ({ uAtmo: { value: new THREE.Color(atmosphere ?? color) } }),
-    [atmosphere, color]
+    () => ({
+      uAtmo: { value: new THREE.Color(atmosphere ?? color) },
+      uLightDir: { value: lightDir },
+    }),
+    [lightDir, atmosphere, color]
+  )
+
+  const cloudUniforms = useMemo(
+    () => ({
+      uAtmo: { value: new THREE.Color(atmosphere ?? color) },
+      uLightDir: { value: lightDir },
+      uFreq: { value: freq },
+    }),
+    [lightDir, atmosphere, color, freq]
   )
 
   useFrame((_, dt) => {
     if (surface.current) surface.current.rotation.y += dt * spin
+    // clouds drift a touch faster than the surface → subtle parallax
+    if (clouds.current) clouds.current.rotation.y += dt * spin * 1.35
   })
 
   return (
@@ -144,6 +202,17 @@ export function Planet({
       <mesh ref={surface}>
         <sphereGeometry args={[radius, 128, 128]} />
         <shaderMaterial vertexShader={surfaceVert} fragmentShader={surfaceFrag} uniforms={surfaceUniforms} />
+      </mesh>
+
+      <mesh ref={clouds} scale={1.02}>
+        <sphereGeometry args={[radius, 96, 96]} />
+        <shaderMaterial
+          vertexShader={surfaceVert}
+          fragmentShader={cloudFrag}
+          uniforms={cloudUniforms}
+          transparent
+          depthWrite={false}
+        />
       </mesh>
 
       <mesh scale={1.05}>
