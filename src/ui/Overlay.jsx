@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useStore } from '../state/useStore.js'
 import { slides } from '../slides/index.js'
 import { CodeBlock } from './CodeBlock.jsx'
+import { FLAT } from '../flat.js'
 
 // Per-scene accent so the UI feels art-directed to each world. A planet slide
 // uses its own atmosphere; parked demo slides fall back to their cluster's
@@ -50,9 +51,19 @@ export function Overlay() {
     return () => window.removeEventListener('resize', fit)
   }, [])
 
+  // In flat (no-WebGL) mode the .flat-bg backdrop sits below the scaled overlay
+  // stage, so it can't read the per-slide --accent that lives on .overlay. Mirror
+  // it onto the document root so the backdrop picks up (and cross-fades) the
+  // cluster color just like the rest of the UI. No-op cost in 3D mode.
+  useEffect(() => {
+    if (FLAT) document.documentElement.style.setProperty('--accent', accentFor(slide))
+  }, [slide])
+
   return (
     <>
-      <div className="blackout" data-show={isStart} />
+      {/* The pre-roll cover holds black until the opening fly-in; in flat mode
+          there's no fly-in, so skip it and show the start slide right away. */}
+      <div className="blackout" data-show={isStart && !FLAT} />
       <div
         className={`overlay ${centered ? 'overlay--center' : ''}`}
         style={{ '--accent': accentFor(slide) }}

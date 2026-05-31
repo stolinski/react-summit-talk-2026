@@ -27,8 +27,9 @@ import { DependencyContrastDemo } from './demos/DependencyContrastDemo.jsx'
  *    eyebrow / title / body / code / demo / socials / kicker   panel content
  *    center  true → centered stage without code (wide centerpiece demo)
  *    accent  '#rrggbb' → override the per-scene accent (else planet/kicker)
- *    support { chrome, safari, firefox: true | 'partial' | false } → 3D engine
- *            orbs (lit = supported, dim = not). Omit to hide. See BrowserSupport.
+ *    support per-engine { chrome, safari, firefox } → 3D logo coins. Each value:
+ *            true · false/omit · 'partial' · { since:'125' } · { since, flag:true }.
+ *            Hover a coin for version/flag. Omit `support` to hide. See BrowserSupport.
  * ─────────────────────────────────────────────────────────────────────────
  */
 export const slides = [
@@ -87,7 +88,11 @@ export const slides = [
     id: 'native-html',
     kicker: 'Native HTML',
     title: 'The modal you keep installing',
-    support: { chrome: true, safari: true, firefox: true },
+    support: {
+      chrome: { since: '37' },
+      safari: { since: '15.4' },
+      firefox: { since: '98' },
+    },
     planet: {
       position: [-58, 3, 36],
       radius: 3.0,
@@ -107,27 +112,74 @@ export const slides = [
   {
     id: 'drawer',
     kicker: 'Native HTML',
-    title: 'A drawer that slides both ways',
+    title: 'A drawer that slides in',
+    support: {
+      chrome: { since: '117' },
+      safari: { since: '17.5' },
+      firefox: { since: '129' },
+    },
     // Reuses the native-html waypoint on purpose: within a planet the camera
     // stays PARKED and the cards rapid-fire. We only fly when we change planets.
     camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
+    // Part 1 of the drawer — the ENTER. translate moves it; @starting-style is
+    // the state to animate FROM, so the first open slides instead of popping.
     code: [
       '<dialog class="drawer">…</dialog>',
       '',
       '.drawer       { translate: 100% 0 }',
       '.drawer[open] { translate: 0 }',
+      '.drawer { transition: translate 0.35s ease }',
       '',
-      '@starting-style { .drawer[open] { translate: 100% 0 } }',
-      '/* allow-discrete → it animates OUT too */',
+      '/* the state to animate FROM, so the first',
+      '   open SLIDES in instead of popping */',
+      '@starting-style {',
+      '  .drawer[open] { translate: 100% 0 }',
+      '}',
     ].join('\n'),
     demo: DrawerDemo,
   },
   {
-    id: 'css-nebula',
+    id: 'drawer-exit',
+    kicker: 'Native HTML',
+    title: 'And it slides back out',
+    support: {
+      chrome: { since: '117' },
+      safari: { since: '17.4' },
+      firefox: { since: '129' },
+    },
+    // Parked at the native-html waypoint: same drawer, the card just swaps.
+    camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
+    // Part 2 — the EXIT, the kill shot. Closing a <dialog> normally yanks it out
+    // instantly; allow-discrete on display/overlay keeps it rendered + in the top
+    // layer long enough to play the slide-out. The part people install vaul for.
+    code: [
+      '/* closing a <dialog> normally removes it now —',
+      '   display: none hits, the exit never plays */',
+      '',
+      '.drawer {',
+      '  transition:',
+      '    translate 0.35s ease,',
+      '    display   0.35s allow-discrete,',
+      '    overlay   0.35s allow-discrete;',
+      '}',
+      '',
+      '/* allow-discrete keeps it rendered + on top',
+      '   long enough to animate OUT — no library */',
+    ].join('\n'),
+    demo: DrawerDemo,
+  },
+  {
+    id: 'scroll-scrub',
     kicker: 'CSS',
-    eyebrow: 'Next neighbor',
-    title: 'The CSS World',
-    body: ':has(), container queries, scroll-driven animations, view transitions — no JavaScript required.',
+    title: 'Scroll-driven animation',
+    support: {
+      chrome: { since: '115' },
+      safari: { since: '26' },
+      firefox: { flag: true },
+    },
+    // First slide of the CSS cluster: it carries the CSS planet (so the planet
+    // renders — see Universe.jsx) and flies here from the Native HTML planet.
+    // The rest of the CSS demos park at this same waypoint and just swap cards.
     planet: {
       position: [-30, -4, -92],
       radius: 3.4,
@@ -136,14 +188,6 @@ export const slides = [
       atmosphere: '#d9a8ff',
       freq: 2.0,
     },
-    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
-  },
-  {
-    id: 'scroll-scrub',
-    kicker: 'CSS',
-    title: 'Scroll-driven animation',
-    support: { chrome: true, safari: false, firefox: 'partial' },
-    // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
       '.card {',
@@ -163,6 +207,11 @@ export const slides = [
     id: 'counter',
     kicker: 'CSS',
     title: 'Numbers that count themselves',
+    support: {
+      chrome: { since: '85' },
+      safari: { since: '16.4' },
+      firefox: { since: '128' },
+    },
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
       '@property --n {',
@@ -182,6 +231,11 @@ export const slides = [
     id: 'sibling-index',
     kicker: 'CSS',
     title: 'Every element knows its index',
+    support: {
+      chrome: { since: '138' },
+      safari: { since: '26.2' },
+      firefox: false,
+    },
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
       '.bar {',
@@ -198,17 +252,26 @@ export const slides = [
     id: 'carousel',
     kicker: 'CSS',
     title: 'The carousel builds its own controls',
+    support: {
+      chrome: { since: '135' },
+      safari: false,
+      firefox: false,
+    },
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
-      '.carousel { scroll-marker-group: after }',
+      '.carousel {',
+      '  display: flex;',
+      '  overflow-x: auto;',
+      '  scroll-snap-type: x mandatory;',
+      '  scroll-marker-group: after;   /* dot row */',
+      '}',
+      '.slide { scroll-snap-align: center }',
       '',
-      '/* dots — generated by the browser */',
+      '/* dots + arrows — GENERATED, zero markup */',
       '.slide::scroll-marker { content: "" }',
       '.slide::scroll-marker:target-current {',
       '  background: #fff',
       '}',
-      '',
-      '/* arrows — also generated */',
       '.carousel::scroll-button(right) { content: "›" }',
     ].join('\n'),
     demo: CarouselDemo,
@@ -217,6 +280,11 @@ export const slides = [
     id: 'sticky-state',
     kicker: 'CSS',
     title: 'A header that knows it’s stuck',
+    support: {
+      chrome: { since: '133' },
+      safari: false,
+      firefox: false,
+    },
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
       '.header {',
@@ -234,7 +302,12 @@ export const slides = [
     id: 'bottom-sheet',
     kicker: 'CSS',
     title: 'A sheet that snaps to size',
-    // Parked at the CSS planet: same waypoint as css-nebula, card swaps.
+    support: {
+      chrome: { since: '69' },
+      safari: { since: '11' },
+      firefox: { since: '68' },
+    },
+    // Parked at the CSS planet: same waypoint as scroll-scrub, card swaps.
     camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     code: [
       '.sheet {',
@@ -249,11 +322,16 @@ export const slides = [
     demo: BottomSheetDemo,
   },
   {
-    id: 'web-apis',
+    id: 'anchor-flip',
     kicker: 'Web APIs',
-    eyebrow: 'Out at the edge',
-    title: 'The Web APIs World',
-    body: 'IntersectionObserver, View Transitions, Web Animations, structuredClone… all built in.',
+    title: 'A menu that flips to stay on screen',
+    support: {
+      chrome: { since: '125' },
+      safari: { since: '18.4' },
+      firefox: { since: '147' },
+    },
+    // First slide of the Web APIs cluster: it carries the Web APIs planet (so the
+    // planet renders — see Universe.jsx) and flies here from the CSS planet.
     planet: {
       position: [118, 5, -46],
       radius: 2.8,
@@ -262,14 +340,6 @@ export const slides = [
       atmosphere: '#8ff2ff',
       freq: 2.6,
     },
-    camera: { pos: [101, 13, -26], target: [118, 5, -46] },
-  },
-  {
-    id: 'anchor-flip',
-    kicker: 'Web APIs',
-    title: 'A menu that flips to stay on screen',
-    support: { chrome: true, safari: false, firefox: false },
-    // Parked at the Web APIs planet: same waypoint as web-apis, card swaps.
     camera: { pos: [101, 13, -26], target: [118, 5, -46] },
     code: [
       '.btn  { anchor-name: --btn }',
@@ -306,14 +376,6 @@ export const slides = [
     camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
   },
   {
-    id: 'ai-average',
-    kicker: 'Agents',
-    eyebrow: 'Regression to the mean',
-    title: 'AI writes the average of the web',
-    body: 'The average is a div, an onClick, and a dependency for the rest. A model returns the most common answer — and the most common answer is the old one.',
-    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
-  },
-  {
     id: 'ai-supply-chain',
     kicker: 'Agents',
     eyebrow: 'Every import is a trust decision',
@@ -327,16 +389,20 @@ export const slides = [
     kicker: 'Agents',
     eyebrow: 'The trade-off collapsed',
     title: 'The reason you installed it is gone',
+    worm: true,
     body: 'You pulled in the library because writing it yourself was the expensive part. It isn’t anymore. The dependency stopped being a trade and became risk you kept for nothing.',
-    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+    // Fly in close to the React planet so the worm breaching it is the focus.
+    camera: { pos: [43, 7, 33], target: [27, -4, 12], smoothTime: 1.6 },
   },
   {
     id: 'ai-other-edge',
     kicker: 'Agents',
     eyebrow: 'The other edge',
     title: 'Point it at nothing and it installs',
+    worm: true,
     body: 'Left to its average, an agent reaches for the registry — and will confidently import a package that doesn’t exist, a name attackers now register to catch the guess. The same tool that deletes dependencies will add a hostile one.',
-    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+    // Parked at the close React-planet view (same as ai-excuse).
+    camera: { pos: [43, 7, 33], target: [27, -4, 12] },
   },
   {
     id: 'ai-defaults',
@@ -354,7 +420,8 @@ export const slides = [
       '',
       'No new dependency without asking first.',
     ].join('\n'),
-    camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+    // Ease back out to the system vista after the close worm beat.
+    camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
   },
   {
     id: 'ai-close',

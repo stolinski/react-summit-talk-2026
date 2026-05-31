@@ -38,11 +38,33 @@ body,
   background: #05060a;
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   overflow: hidden;
+  /* In flat mode Overlay mirrors --accent onto the root; ease it so the flat-bg
+     glow cross-fades between clusters (matches the .overlay accent transition). */
+  transition: --accent 0.6s ease;
 }
 
 canvas {
   position: fixed;
   inset: 0;
+}
+
+/* Battery-saver backdrop (`?flat`): replaces the WebGL canvas. A flat dark base
+   with two soft accent-tinted glows so the deck doesn't read as bare. The accent
+   is inherited from the root (set per slide by Overlay) and cross-fades. */
+.flat-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+      120% 80% at 82% 112%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      100% 70% at 14% -12%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 55%
+    ),
+    #05060a;
 }
 
 /* Black pre-roll cover: holds the screen black on the 'start' slide so the
@@ -862,6 +884,35 @@ canvas {
 .card--wide {
   max-width: 1180px;
   width: max-content;
+}
+
+/* Hover tooltip for the 3D browser-support coins (drei <Html>, so it lives
+   outside the scaled stage — sizes in real px). Tinted to the hovered browser
+   via --tip. Sits to the left of the coin (coins hug the right margin). */
+.support-tip {
+  transform: translateX(-118%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 13px;
+  border-radius: 11px;
+  white-space: nowrap;
+  background: rgba(9, 12, 20, 0.92);
+  border: 1px solid color-mix(in srgb, var(--tip, #38bdf8) 55%, transparent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55),
+    0 0 22px -6px color-mix(in srgb, var(--tip, #38bdf8) 60%, transparent);
+  backdrop-filter: blur(6px);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: #eef3fb;
+}
+.support-tip strong {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.support-tip span {
+  font-size: 12px;
+  color: #9fb0c8;
 }
 
 .hud {

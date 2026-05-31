@@ -117,18 +117,41 @@ planets, code samples, demos. Start here.
   surface for parallax — mesh rotation only, no per-frame noise = no flicker) and
   a **day/night atmosphere rim** (the fresnel shell brightens on the sunlit limb
   via `uLightDir`, instead of a flat ring). Lit from the sun (`SUN_POSITION`).
+- `Sandworm.jsx` — a **Shai-Hulud** that ORBITS the React planet and burrows in
+  and out of it during the supply-chain beat ("deps burrowing through your
+  project"). The geometry is a straight canonical worm (`buildWorm` bakes
+  per-vertex `aU` length, `aOff` ring offset, `aTheta`; with geometric ring
+  ridges + tapered tail + flared toothed **maw**). The **vertex shader bends it
+  onto an animated path** — `pathPos(s)` spirals around the planet at an
+  oscillating radius, so the worm weaves above/below the surface (the opaque
+  planet occludes the buried stretches) and **swims forward** as `uTime` advances
+  (head leads, body follows). The **fragment shader** gives it life/texture:
+  fbm-bump normal perturbation + ring-plate shading + wet specular + rim, lit by
+  a fixed key light — reads as a textured creature, not a flat tube. `uAmp` (eased
+  from `show`) grows the breach + radius from inside so it surfaces on arrival;
+  `DoubleSide` for the maw gullet; `frustumCulled={false}` (real positions are
+  shader-computed). Shown via the slide `worm: true` flag; `ai-excuse`/
+  `ai-other-edge` fly **close** to the React planet (`ai-supply-chain` keeps its
+  contrast card at the vista; `ai-defaults` eases back). Tune in-file: `profile`
+  (thickness/maw), breach amp + freq + swim speed in `pathPos`/`head`, `ARC`,
+  ridge freq, sand color.
 - `BrowserSupport.jsx` — the **3D browser-support readout** (replaces the planned
   emoji Baseline badge — Scott rejected emoji). Three **embossed logo coins** in a
   right-margin vertical column (placement Scott liked), camera-anchored (clears the
   centered cards, tuned for 16:9). Each coin **bump-maps its browser logo** into
   the face: the logo texture's luminance drives a relief normal (object-space lit,
   stable on screen), so it reads instantly as that browser AND has 3D emboss.
-  Supported = the coin lights up and glows its brand color; unsupported = a dim
-  dark coin with the logo still embossed. Driven by each slide's `support` field
-  (omit to hide). Logos are **simpleicons white glyphs** in `public/logos/`
-  (`chrome/safari/firefox.svg`, fetched via `cdn.simpleicons.org/<slug>/white`) —
-  swap in official/full-color art by replacing those files. Brand tint colors and
-  emboss depth (`* 5.0` in `discFrag`) are easy dials.
+  **Three tiers** carry the state: shipped → full glow; behind a flag → half-lit;
+  unsupported → dark, desaturated dead coin. **Hover a coin** for a tinted tooltip
+  (drei `<Html>`) with the version/flag detail. Driven by each slide's `support`
+  field (omit to hide); per-engine value is `true | false | 'partial' |
+  { since:'125' } | { since, flag:true }`. Logos are **simpleicons white glyphs**
+  in `public/logos/` (`chrome/safari/firefox.svg`, via
+  `cdn.simpleicons.org/<slug>/white`) — swap in official/full-color art by
+  replacing those files. Easy dials: brand tints, emboss depth (`* 9.5` in
+  `discFrag`), off-darkness (`0.26`) and off-desaturation (`0.4 + 0.6`). Tooltip
+  wording is scaffold; the version/flag data on each slide is factual placeholder
+  for Scott to verify.
 - `Sun.jsx` — core sphere + a **two-layer corona** (inner + wide faint outer) and
   an **anamorphic horizontal lens streak**, all camera-facing sprites at the sun
   so the flare only shows when the sun is on screen (no global wash).
