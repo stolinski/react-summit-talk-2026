@@ -41,28 +41,75 @@ function buildWorm(R) {
     return r * R
   }
 
-  const position = []
-  const aU = []
-  const aOff = []
-  const aTheta = []
-  const aAxial = []
-  for (let i = 0; i <= T; i++) {
+  // The vertex shader bends this onto the orbit path; here we build it as a
+  // STRAIGHT tube in local (x, y = cross-section; z = along-length) space so we
+  // can compute true surface normals from neighbouring vertices. `AX` is the
+  // straight length (≈ the rendered centerline length) — it only sets how steep
+  // the taper/lip/teeth read to the normals, so an approximation is fine.
+  const AX = 2.7 * R
+  const ROWS = T + 1
+  const COLS = RING + 1
+  // sp[i][j] = [x, y, z, theta, radius] for each grid vertex
+  const sp = []
+  for (let i = 0; i < ROWS; i++) {
     const u = i / T
     const baseR = profile(u)
     // a dense crown of fangs rings the rim; the throat recedes into a dark gullet
     const teethBand =
       THREE.MathUtils.smoothstep(u, 0.8, 0.88) * (1 - THREE.MathUtils.smoothstep(u, 0.9, 0.965))
     const gullet = THREE.MathUtils.smoothstep(u, 0.86, 1.0) * -0.8 * R
-    for (let j = 0; j <= RING; j++) {
+    const row = []
+    for (let j = 0; j < COLS; j++) {
       const th = (j / RING) * Math.PI * 2
       const fang = Math.pow(Math.abs(Math.sin(th * (TEETH / 2))), 8) * teethBand
       const rr = baseR + fang * 0.03 * R // fangs sit just proud of the lip…
       const axial = gullet + fang * 0.18 * R // …and jut forward, ringing the opening
+      row.push([rr * Math.cos(th), rr * Math.sin(th), u * AX + axial, th, rr, axial])
+    }
+    sp.push(row)
+  }
+  // wrap in theta, clamp at the ends
+  const at = (i, j) => sp[Math.max(0, Math.min(ROWS - 1, i))][((j % RING) + RING) % RING]
+
+  const position = []
+  const aU = []
+  const aOff = []
+  const aTheta = []
+  const aAxial = []
+  const aNormal = []
+  for (let i = 0; i < ROWS; i++) {
+    const u = i / T
+    for (let j = 0; j < COLS; j++) {
+      const cur = sp[i][j]
+      // analytic normal: cross of the along-length and around-ring tangents
+      const a = at(i, j - 1)
+      const b = at(i, j + 1)
+      const c = at(i - 1, j)
+      const d = at(i + 1, j)
+      const dux = d[0] - c[0]
+      const duy = d[1] - c[1]
+      const duz = d[2] - c[2]
+      const dvx = b[0] - a[0]
+      const dvy = b[1] - a[1]
+      const dvz = b[2] - a[2]
+      let nx = dvy * duz - dvz * duy
+      let ny = dvz * dux - dvx * duz
+      let nz = dvx * duy - dvy * dux
+      const nl = Math.hypot(nx, ny, nz) || 1
+      nx /= nl
+      ny /= nl
+      nz /= nl
+      if (nx * cur[0] + ny * cur[1] < 0) {
+        nx = -nx // keep normals pointing out of the tube
+        ny = -ny
+        nz = -nz
+      }
       position.push(0, 0, u) // placeholder; real position computed in the shader
       aU.push(u)
-      aOff.push(rr * Math.cos(th), rr * Math.sin(th))
-      aTheta.push(th)
-      aAxial.push(axial)
+      aOff.push(cur[0], cur[1])
+      aTheta.push(cur[3])
+      aAxial.push(cur[5]) // axial offset only (gullet + fang); centerline comes from the path
+      aNormal.push(nx, ny, nz)
     }
   }
   const index = []
@@ -81,6 +128,7 @@ function buildWorm(R) {
   g.setAttribute('aOff', new THREE.Float32BufferAttribute(aOff, 2))
   g.setAttribute('aTheta', new THREE.Float32BufferAttribute(aTheta, 1))
   g.setAttribute('aAxial', new THREE.Float32BufferAttribute(aAxial, 1))
+  g.setAttribute('aNormal', new THREE.Float32BufferAttribute(aNormal, 3))
   g.setIndex(index)
   return g
 }
@@ -90,6 +138,7 @@ const vert = /* glsl */ `
   attribute vec2 aOff;
   attribute float aTheta;
   attribute float aAxial;
+  attribute vec3 aNormal;
   uniform float uTime;
   uniform float uAmp;
   uniform float uR;
@@ -112,18 +161,26 @@ const vert = /* glsl */ `
     float ARC = 3.6;                      // how much of the path the worm spans
     float head = uTime * 0.42;            // swims forward + orbits over time
     float s = head - (1.0 - aU) * ARC;    // tail trails behind the head
-    float e = 0.015;
+    float e = 0.01;
     vec3 P  = pathPos(s);
-    vec3 Pe = pathPos(s + e);
-    vec3 T  = normalize(Pe - P);
-    vec3 radial = normalize(P);
-    vec3 side = normalize(cross(T, radial));
-    vec3 up   = normalize(cross(side, T));
+    vec3 T  = normalize(pathPos(s + e) - pathPos(s - e)); // centered tangent
+
+    // Stable orthonormal frame. The cross-section is a circle, so the frame's
+    // ROLL is free — we only need it orthonormal and smoothly varying. The old
+    // frame keyed off normalize(P) (the planet-radial), which goes parallel to T
+    // every time the worm breaches → cross() collapsed → NaNs → torn polygons.
+    // Instead, Gram-Schmidt a world reference onto the plane ⟂ T, swapping the
+    // reference smoothly before it can ever align with T.
+    vec3 ref = mix(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), smoothstep(0.55, 0.9, abs(T.y)));
+    vec3 up   = normalize(ref - T * dot(T, ref));
+    vec3 side = cross(T, up);
 
     vec3 local = P + T * aAxial + aOff.x * up + aOff.y * side;
     vec4 wp = modelMatrix * vec4(local, 1.0);
     vWorldPos = wp.xyz;
-    vNormal = normalize(mat3(modelMatrix) * (aOff.x * up + aOff.y * side));
+    // rotate the baked tube-space normal into the same frame (real surface normal)
+    vec3 nrm = aNormal.x * up + aNormal.y * side + aNormal.z * T;
+    vNormal = normalize(mat3(modelMatrix) * nrm);
     vU = aU;
     vTheta = aTheta;
     gl_Position = projectionMatrix * viewMatrix * wp;

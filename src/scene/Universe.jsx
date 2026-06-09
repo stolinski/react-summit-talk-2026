@@ -6,6 +6,7 @@ import { Planet } from './Planet.jsx'
 import { LogoConstellation } from './LogoConstellation.jsx'
 import { BrowserSupport } from './BrowserSupport.jsx'
 import { Sandworm } from './Sandworm.jsx'
+import { ReactAtom } from './ReactAtom.jsx'
 import { GALAXY } from './layout.js'
 import { slides } from '../slides/index.js'
 import { useStore } from '../state/useStore.js'
@@ -46,6 +47,7 @@ function IntroConstellations() {
 export function Universe() {
   const index = useStore((s) => s.index)
   const wormShow = Boolean(slides[index]?.worm)
+  const atomShow = slides[index]?.id === 'system'
   return (
     <>
       <ambientLight intensity={0.15} />
@@ -67,6 +69,11 @@ export function Universe() {
       {/* Shai-Hulud breaching the React planet during the supply-chain beat
           (deps burrowing through your project). Shown on slides with `worm`. */}
       <Sandworm position={[34, 1, 22]} radius={2.4} show={wormShow} />
+
+      {/* The React logo AS a planet — a glowing cyan atom, shown alone on the
+          "React is one planet" beat. Isolated at +z so framing it never catches
+          the sun or the other planets. */}
+      <ReactAtom position={[0, 12, 120]} show={atomShow} />
 
       {/* 3D browser-support readout (per-slide `support` field). */}
       <BrowserSupport />

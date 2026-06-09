@@ -6,7 +6,7 @@
  * change. Swap in Shiki here later if you ever want full tokenization.
  */
 const TOKEN =
-  /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(<\/?[A-Za-z][\w-]*|@[\w-]+|>)|(\b\d+(?:\.\d+)?(?:px|rem|em|%|fr|vw|vh|dvh|deg|ms|s)?\b)/g
+  /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(<\/?[A-Za-z][\w-]*|@[\w-]+|>)|(\b\d+(?:\.\d+)?(?:px|rem|em|%|fr|vw|vh|dvh|deg|ms|s)?\b)/g
 
 const CLASS = ['tok-comment', 'tok-string', 'tok-tag', 'tok-num']
 

@@ -1,86 +1,92 @@
 /* Display face for headings. Self-hosted so it works offline on conference
    wifi — drop the file in public/fonts/ (see public/fonts/README.md). */
 @font-face {
-  font-family: 'Newake';
-  src: local('Newake'),
-    url('/fonts/Newake.woff2') format('woff2'),
-    url('/fonts/Newake.otf') format('opentype');
-  font-weight: 400 900;
-  font-display: swap;
+    font-family: "Newake";
+    src:
+        local("Newake"),
+        url("/fonts/Newake.woff2") format("woff2"),
+        url("/fonts/Newake.otf") format("opentype");
+    font-weight: 400 900;
+    font-display: swap;
 }
 
 :root {
-  color-scheme: dark;
-  --accent: #38bdf8;
-  /* Set by Overlay.jsx on resize: min(innerWidth/1920, innerHeight/1080). The
+    color-scheme: dark;
+    --accent: #38bdf8;
+    /* Set by Overlay.jsx on resize: min(innerWidth/1920, innerHeight/1080). The
      whole DOM stage scales by this, so the deck is pixel-identical at any
      resolution — design once at 1920×1080 and it fits everywhere. */
-  --stage-scale: 1;
+    --stage-scale: 1;
 }
 
 /* Registered so the per-scene accent (set on .overlay by Overlay.jsx) can
    CROSS-FADE between scenes instead of snapping — premium cohesion. */
 @property --accent {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #38bdf8;
+    syntax: "<color>";
+    inherits: true;
+    initial-value: #38bdf8;
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html,
 body,
 #root {
-  margin: 0;
-  height: 100%;
-  background: #05060a;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  overflow: hidden;
-  /* In flat mode Overlay mirrors --accent onto the root; ease it so the flat-bg
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        sans-serif;
+    overflow: hidden;
+    /* In flat mode Overlay mirrors --accent onto the root; ease it so the flat-bg
      glow cross-fades between clusters (matches the .overlay accent transition). */
-  transition: --accent 0.6s ease;
+    transition: --accent 0.6s ease;
 }
 
 canvas {
-  position: fixed;
-  inset: 0;
+    position: fixed;
+    inset: 0;
 }
 
 /* Battery-saver backdrop (`?flat`): replaces the WebGL canvas. A flat dark base
    with two soft accent-tinted glows so the deck doesn't read as bare. The accent
    is inherited from the root (set per slide by Overlay) and cross-fades. */
 .flat-bg {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(
-      120% 80% at 82% 112%,
-      color-mix(in srgb, var(--accent) 16%, transparent),
-      transparent 58%
-    ),
-    radial-gradient(
-      100% 70% at 14% -12%,
-      color-mix(in srgb, var(--accent) 10%, transparent),
-      transparent 55%
-    ),
-    #05060a;
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(
+            120% 80% at 82% 112%,
+            color-mix(in srgb, var(--accent) 16%, transparent),
+            transparent 58%
+        ),
+        radial-gradient(
+            100% 70% at 14% -12%,
+            color-mix(in srgb, var(--accent) 10%, transparent),
+            transparent 55%
+        ),
+        #05060a;
 }
 
 /* Black pre-roll cover: holds the screen black on the 'start' slide so the
    opening fly-in only happens once you hit next. Sits above the canvas and the
    overlay (incl. the HUD). */
 .blackout {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  background: #000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.6s ease;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
 }
-.blackout[data-show='true'] {
-  opacity: 1;
+.blackout[data-show="true"] {
+    opacity: 1;
 }
 
 /* The readable DOM is laid out on a fixed 1920×1080 "stage" and scaled to fit
@@ -89,495 +95,551 @@ canvas {
    full-bleed behind it, so non-16:9 screens just show more universe — no bars.
    Click-through by default; only interactive children opt back in. */
 .overlay {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 1920px;
-  height: 1080px;
-  transform: translate(-50%, -50%) scale(var(--stage-scale));
-  transform-origin: center center;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 72px 112px;
-  /* the accent (set per slide) eases between scenes */
-  transition: --accent 0.6s ease;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 1920px;
+    height: 1080px;
+    transform: translate(-50%, -50%) scale(var(--stage-scale));
+    transform-origin: center center;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 72px 112px;
+    /* the accent (set per slide) eases between scenes */
+    transition: --accent 0.6s ease;
 }
 
 .card {
-  pointer-events: auto;
-  max-width: 900px;
-  padding: 40px 46px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  /* Frosted glass with a faint lit top edge — premium depth without flicker. */
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0) 42%
-    ),
-    rgba(10, 14, 22, 0.64);
-  backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    /* top highlight */ 0 0 0 1px rgba(255, 255, 255, 0.04),
-    /* crisp hairline */ 0 40px 90px -22px rgba(0, 0, 0, 0.7),
-    /* deep ambient */ 0 14px 34px -14px rgba(0, 0, 0, 0.55),
-    /* scene-colored halo */ 0 24px 80px -30px
-      color-mix(in srgb, var(--accent) 30%, transparent);
-  /* small delay so the card lands as the camera arrives, not mid-flight */
-  animation: rise 0.5s ease 0.35s both;
+    pointer-events: auto;
+    max-width: 900px;
+    padding: 40px 46px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    /* Frosted glass with a faint lit top edge — premium depth without flicker. */
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.06),
+            rgba(255, 255, 255, 0) 42%
+        ),
+        rgba(0, 0, 0, 0.64);
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        /* top highlight */ 0 0 0 1px rgba(255, 255, 255, 0.04),
+        /* crisp hairline */ 0 40px 90px -22px rgba(0, 0, 0, 0.7),
+        /* deep ambient */ 0 14px 34px -14px rgba(0, 0, 0, 0.55),
+        /* scene-colored halo */ 0 24px 80px -30px
+            color-mix(in srgb, var(--accent) 30%, transparent);
+    /* small delay so the card lands as the camera arrives, not mid-flight */
+    animation: rise 0.5s ease 0.35s both;
 }
 
 /* Staggered content reveal: the panel lands (rise), then eyebrow → title →
    body → code/demo focus and settle in sequence. Card is keyed by slide id, so
    this replays on every change. */
 .card > * {
-  animation: rise-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: rise-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .card > .eyebrow {
-  animation-delay: 0.42s;
+    animation-delay: 0.42s;
 }
 .card > h1 {
-  animation-delay: 0.5s;
+    animation-delay: 0.5s;
 }
 .card > .body {
-  animation-delay: 0.6s;
+    animation-delay: 0.6s;
 }
 .card > .socials,
 .card > .code,
+.card > .figure,
 .card > .demo {
-  animation-delay: 0.68s;
+    animation-delay: 0.68s;
 }
 @keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-    filter: blur(6px);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+        filter: blur(6px);
+    }
 }
 
 /* Title slide: let the universe breathe, no frame. */
 .card--title {
-  max-width: 1400px;
-  background: transparent;
-  backdrop-filter: none;
-  border: none;
-  box-shadow: none;
+    max-width: 1400px;
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
 }
 
 .eyebrow {
-  margin: 0 0 14px;
-  font-size: 1rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--accent);
+    margin: 0 0 14px;
+    font-size: 1rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
 }
 
 .card h1 {
-  margin: 0 0 18px;
-  font-family: 'Newake', ui-sans-serif, system-ui, sans-serif;
-  font-size: 3.6rem;
-  line-height: 1.05;
-  font-weight: 800;
-  color: #f8fafc;
+    margin: 0 0 18px;
+    font-family: "Newake", ui-sans-serif, system-ui, sans-serif;
+    font-size: 3.6rem;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #f8fafc;
 }
 
 .card--title h1 {
-  font-size: 8.5rem;
+    font-size: 8.5rem;
 }
 
 .body {
-  margin: 0 0 24px;
-  max-width: 60ch;
-  font-size: 1.6rem;
-  line-height: 1.45;
-  color: #cbd5e1;
+    margin: 0 0 24px;
+    max-width: 60ch;
+    font-size: 1.6rem;
+    line-height: 1.45;
+    color: #cbd5e1;
 }
 
 .code {
-  margin: 0;
-  padding: 24px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  /* subtle depth: a hair lighter at the top, faint inner top highlight */
-  background: linear-gradient(180deg, #0e1426, #0a0f1e);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 10px 30px -16px rgba(0, 0, 0, 0.6);
-  overflow: auto;
-  font-size: 1.2rem;
-  line-height: 1.6;
-  color: #e2e8f0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    margin: 0;
+    padding: 24px 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    /* subtle depth: a hair lighter at the top, faint inner top highlight */
+    background: linear-gradient(180deg, #111, #000);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 10px 30px -16px rgba(0, 0, 0, 0.6);
+    overflow: auto;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .socials {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 6px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 6px 0;
 }
 
 .social {
-  padding: 10px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #e2e8f0;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #e2e8f0;
 }
 
 .demo {
-  margin-top: 26px;
+    margin-top: 26px;
+}
+
+.figure {
+    margin: 26px 0 0;
+}
+.figure img {
+    display: block;
+    max-width: 100%;
+    max-height: 560px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 10px 30px -16px rgba(0, 0, 0, 0.6);
+}
+/* Shown until a real `image.src` is supplied — a dashed 16:9 frame so the layout
+   reads correctly while the slide is still a placeholder. */
+.figure-placeholder {
+    display: grid;
+    place-items: center;
+    width: 760px;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    border: 1px dashed
+        color-mix(in srgb, var(--accent) 45%, rgba(255, 255, 255, 0.25));
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.03) 14px,
+        rgba(255, 255, 255, 0.06) 14px,
+        rgba(255, 255, 255, 0.06) 28px
+    );
+    color: #94a3b8;
+    font-size: 1.3rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.figure figcaption {
+    margin-top: 12px;
+    font-size: 1.05rem;
+    color: #94a3b8;
 }
 
 .btn {
-  pointer-events: auto;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 12px;
-  background: var(--accent);
-  color: #04111b;
-  font-size: 1.2rem;
-  font-weight: 700;
-  cursor: pointer;
+    pointer-events: auto;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #04111b;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 /* Modals/drawers use showModal() → they're promoted to the top layer, which is
    NOT affected by the stage transform, so they size against the real viewport.
    vmin keeps them scaling with resolution; a modal should cover the real screen. */
 .native-dialog {
-  max-width: min(90vw, 44vmin);
-  min-width: 320px;
-  padding: 3vmin 3.4vmin;
-  border: none;
-  border-radius: 1.6vmin;
-  background: #0b1020;
-  color: #e2e8f0;
-  font-size: 1.7vmin;
+    max-width: min(90vw, 44vmin);
+    min-width: 320px;
+    padding: 3vmin 3.4vmin;
+    border: none;
+    border-radius: 1.6vmin;
+    background: #0b1020;
+    color: #e2e8f0;
+    font-size: 1.7vmin;
 }
 
 .native-dialog h3 {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .native-dialog::backdrop {
-  background: rgba(2, 6, 12, 0.6);
-  backdrop-filter: blur(4px);
+    background: rgba(2, 6, 12, 0.6);
+    backdrop-filter: blur(4px);
 }
 
 /* The drawer: a modal <dialog> pinned to the right edge that animates both
    ways. translate moves it; allow-discrete on display/overlay keeps it in the
    top layer long enough to animate OUT (the part that used to need JS). */
 .drawer {
-  height: 100dvh;
-  max-height: 100dvh;
-  width: min(92vw, 40vmin);
-  min-width: 300px;
-  margin: 0 0 0 auto; /* pin to the right edge */
-  padding: 3.4vmin 3.8vmin;
-  border: none;
-  border-radius: 1.6vmin 0 0 1.6vmin;
-  background: #0b1020;
-  color: #e2e8f0;
-  font-size: 1.7vmin;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: min(92vw, 40vmin);
+    min-width: 300px;
+    margin: 0 0 0 auto; /* pin to the right edge */
+    padding: 3.4vmin 3.8vmin;
+    border: none;
+    border-radius: 1.6vmin 0 0 1.6vmin;
+    background: #0b1020;
+    color: #e2e8f0;
+    font-size: 1.7vmin;
 
-  translate: 100% 0; /* off-screen right when closed */
-  transition: translate 0.35s ease, display 0.35s allow-discrete,
-    overlay 0.35s allow-discrete;
+    translate: 100% 0; /* off-screen right when closed */
+    transition:
+        translate 0.35s ease,
+        display 0.35s allow-discrete,
+        overlay 0.35s allow-discrete;
 }
 
 .drawer[open] {
-  translate: 0 0; /* slid in */
+    translate: 0 0; /* slid in */
 }
 
 /* the state to animate FROM on first open */
 @starting-style {
-  .drawer[open] {
-    translate: 100% 0;
-  }
+    .drawer[open] {
+        translate: 100% 0;
+    }
 }
 
 .drawer h3 {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .drawer::backdrop {
-  background: rgba(2, 6, 12, 0);
-  backdrop-filter: blur(4px);
-  transition: background 0.35s ease, display 0.35s allow-discrete,
-    overlay 0.35s allow-discrete;
+    background: rgba(2, 6, 12, 0);
+    backdrop-filter: blur(4px);
+    transition:
+        background 0.35s ease,
+        display 0.35s allow-discrete,
+        overlay 0.35s allow-discrete;
 }
 
 .drawer[open]::backdrop {
-  background: rgba(2, 6, 12, 0.6);
+    background: rgba(2, 6, 12, 0.6);
 }
 
 @starting-style {
-  .drawer[open]::backdrop {
-    background: rgba(2, 6, 12, 0);
-  }
+    .drawer[open]::backdrop {
+        background: rgba(2, 6, 12, 0);
+    }
 }
 
 /* Code-hero slides: the code is the star, centered on the stage; the planet
    behind the frosted card is just a backdrop glow. */
 .overlay--center {
-  justify-content: center;
-  align-items: center;
+    justify-content: center;
+    align-items: center;
 }
 
 .card--code {
-  max-width: 1080px;
-  width: max-content;
+    max-width: 1080px;
+    width: max-content;
 }
 
 .card--code h1 {
-  font-size: 2.6rem;
-  margin-bottom: 20px;
+    font-size: 2.6rem;
+    margin-bottom: 20px;
 }
 
 .card--code .code {
-  font-size: 1.95rem;
-  line-height: 1.6;
+    font-size: 1.95rem;
+    line-height: 1.6;
 }
 
 /* Zero-dependency highlighting tokens (see CodeBlock.jsx). */
 .code .tok-comment {
-  color: #5b6b7f;
-  font-style: italic;
+    color: #5b6b7f;
+    font-style: italic;
 }
 .code .tok-string {
-  color: #f0a868;
+    color: #f0a868;
 }
 .code .tok-tag {
-  color: #7dd3fc;
+    color: #7dd3fc;
 }
 .code .tok-num {
-  color: #fbbf24;
+    color: #fbbf24;
 }
 
 /* Scroll-scrub gallery: each card animates off its own position in the
    scroller via animation-timeline: view(). Zero JS. */
 .scrubber {
-  display: flex;
-  gap: 30px;
-  width: 820px;
-  padding-inline: calc(50% - 130px); /* lets the first & last card reach center */
-  padding-block: 40px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  perspective: 1400px;
-  scrollbar-width: none;
+    display: flex;
+    gap: 30px;
+    width: 820px;
+    padding-inline: calc(
+        50% - 130px
+    ); /* lets the first & last card reach center */
+    padding-block: 40px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    perspective: 1400px;
+    scrollbar-width: none;
 }
 .scrubber::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 .scrub-card {
-  flex: 0 0 260px;
-  aspect-ratio: 3 / 4;
-  display: grid;
-  place-items: center;
-  scroll-snap-align: center;
-  border-radius: 22px;
-  font-size: 3.6rem;
-  font-weight: 800;
-  color: #04111b;
-  background: linear-gradient(
-    155deg,
-    hsl(calc(var(--i) * 42) 85% 66%),
-    hsl(calc(var(--i) * 42 + 30) 80% 52%)
-  );
+    flex: 0 0 260px;
+    aspect-ratio: 3 / 4;
+    display: grid;
+    place-items: center;
+    scroll-snap-align: center;
+    border-radius: 22px;
+    font-size: 3.6rem;
+    font-weight: 800;
+    color: #04111b;
+    background: linear-gradient(
+        155deg,
+        hsl(calc(var(--i) * 42) 85% 66%),
+        hsl(calc(var(--i) * 42 + 30) 80% 52%)
+    );
 
-  animation: scrub linear both;
-  animation-timeline: view(inline);
+    animation: scrub linear both;
+    animation-timeline: view(inline);
 }
 
 @keyframes scrub {
-  0% {
-    scale: 0.6;
-    opacity: 0.3;
-    rotate: y -42deg;
-  }
-  50% {
-    scale: 1;
-    opacity: 1;
-    rotate: y 0deg;
-  }
-  100% {
-    scale: 0.6;
-    opacity: 0.3;
-    rotate: y 42deg;
-  }
+    0% {
+        scale: 0.6;
+        opacity: 0.3;
+        rotate: y -42deg;
+    }
+    50% {
+        scale: 1;
+        opacity: 1;
+        rotate: y 0deg;
+    }
+    100% {
+        scale: 0.6;
+        opacity: 0.3;
+        rotate: y 42deg;
+    }
 }
 
 /* Animated counter: an @property <integer> animated by keyframes, printed with
    counter(). Pure CSS, no timer. */
 @property --count {
-  syntax: '<integer>';
-  initial-value: 0;
-  inherits: false;
+    syntax: "<integer>";
+    initial-value: 0;
+    inherits: false;
 }
 .counter {
-  counter-reset: count var(--count);
-  animation: count-up 3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  font-size: 7rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: #f8fafc;
+    counter-reset: count var(--count);
+    animation: count-up 3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    font-size: 7rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #f8fafc;
 }
 .counter::after {
-  content: counter(count);
+    content: counter(count);
 }
 @keyframes count-up {
-  from {
-    --count: 0;
-  }
-  to {
-    --count: 1000000;
-  }
+    from {
+        --count: 0;
+    }
+    to {
+        --count: 1000000;
+    }
 }
 
 /* sibling-index(): every bar derives its height, hue, and delay from its own
    index — no inline --i, no JS. */
 .siblings {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  height: 360px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 360px;
 }
 .sib {
-  width: 46px;
-  height: calc(sibling-index() * 28px);
-  border-radius: 10px 10px 4px 4px;
-  background: hsl(calc(sibling-index() * 26) 85% 62%);
-  animation: sib-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(sibling-index() * 70ms);
+    width: 46px;
+    height: calc(sibling-index() * 28px);
+    border-radius: 10px 10px 4px 4px;
+    background: hsl(calc(sibling-index() * 26) 85% 62%);
+    animation: sib-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(sibling-index() * 70ms);
 }
 @keyframes sib-rise {
-  from {
-    height: 0;
-    opacity: 0;
-  }
+    from {
+        height: 0;
+        opacity: 0;
+    }
 }
 
 /* Carousel: scroll-snap + browser-GENERATED dot markers (::scroll-marker) and
    prev/next buttons (::scroll-button). Zero JS. */
 .carousel {
-  width: 560px;
-  height: 320px;
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scroll-marker-group: after;
-  scrollbar-width: none;
-  border-radius: 18px;
-  position: relative;
+    width: 560px;
+    height: 320px;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scroll-marker-group: after;
+    scrollbar-width: none;
+    border-radius: 18px;
+    position: relative;
 }
 .carousel::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 .carousel-slide {
-  flex: 0 0 100%;
-  scroll-snap-align: center;
-  display: grid;
-  place-items: center;
-  font-size: 5rem;
-  font-weight: 800;
-  color: #04111b;
-  background: linear-gradient(
-    155deg,
-    hsl(calc(var(--i) * 48) 85% 64%),
-    hsl(calc(var(--i) * 48 + 30) 80% 52%)
-  );
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    display: grid;
+    place-items: center;
+    font-size: 5rem;
+    font-weight: 800;
+    color: #04111b;
+    background: linear-gradient(
+        155deg,
+        hsl(calc(var(--i) * 48) 85% 64%),
+        hsl(calc(var(--i) * 48 + 30) 80% 52%)
+    );
 }
 .carousel::scroll-button(left),
 .carousel::scroll-button(right) {
-  position: absolute;
-  bottom: 16px;
-  width: 46px;
-  height: 46px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(2, 6, 12, 0.55);
-  color: #fff;
-  font-size: 1.6rem;
-  cursor: pointer;
+    position: absolute;
+    bottom: 16px;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(2, 6, 12, 0.55);
+    color: #fff;
+    font-size: 1.6rem;
+    cursor: pointer;
 }
 .carousel::scroll-button(left) {
-  content: '‹';
-  left: 16px;
+    content: "‹";
+    left: 16px;
 }
 .carousel::scroll-button(right) {
-  content: '›';
-  right: 16px;
+    content: "›";
+    right: 16px;
 }
 .carousel::scroll-button(*):disabled {
-  opacity: 0.3;
+    opacity: 0.3;
 }
 .carousel::scroll-marker-group {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  padding-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 18px;
 }
 .carousel-slide::scroll-marker {
-  content: '';
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  cursor: pointer;
+    content: "";
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
 }
 .carousel-slide::scroll-marker:target-current {
-  background: #fff;
+    background: #fff;
 }
 
 /* scroll-state() container query: a sticky header that restyles when stuck. */
 .sticky-scroller {
-  width: 520px;
-  height: 340px;
-  overflow-y: auto;
-  border-radius: 16px;
-  background: #0b1020;
+    width: 520px;
+    height: 340px;
+    overflow-y: auto;
+    border-radius: 16px;
+    background: #0b1020;
 }
 .sticky-head {
-  position: sticky;
-  top: 0;
-  container-type: scroll-state;
+    position: sticky;
+    top: 0;
+    container-type: scroll-state;
 }
 .sticky-title {
-  display: block;
-  padding: 30px 26px;
-  font-size: 2rem;
-  font-weight: 800;
-  background: #131a2e;
-  color: #f8fafc;
-  transition: padding 0.3s ease, font-size 0.3s ease, background 0.3s ease,
-    color 0.3s ease, box-shadow 0.3s ease;
+    display: block;
+    padding: 30px 26px;
+    font-size: 2rem;
+    font-weight: 800;
+    background: #131a2e;
+    color: #f8fafc;
+    transition:
+        padding 0.3s ease,
+        font-size 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 @container scroll-state(stuck: top) {
-  .sticky-title {
-    padding: 14px 26px;
-    font-size: 1.3rem;
-    background: var(--accent);
-    color: #04111b;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-  }
+    .sticky-title {
+        padding: 14px 26px;
+        font-size: 1.3rem;
+        background: var(--accent);
+        color: #04111b;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
 }
 .sticky-body {
-  padding: 22px 26px;
-  color: #cbd5e1;
-  line-height: 1.7;
-  font-size: 1.1rem;
+    padding: 22px 26px;
+    color: #cbd5e1;
+    line-height: 1.7;
+    font-size: 1.1rem;
 }
 .sticky-body code {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 1px 6px;
-  border-radius: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 6px;
+    border-radius: 5px;
 }
 
 /* Multi-detent bottom sheet (the `vaul` job): the peek / half / full rest
@@ -586,486 +648,782 @@ canvas {
    no open/half/full state in JS. `timeline-scope` lets the dim (a sibling)
    read the scroller's named scroll-timeline. */
 .bs-device {
-  position: relative;
-  width: var(--bs-w);
-  height: var(--bs-h);
-  border-radius: 36px;
-  overflow: hidden;
-  background: #0a0f1c;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 6px #05070d, 0 26px 64px rgba(0, 0, 0, 0.55);
-  timeline-scope: --bs;
+    position: relative;
+    width: var(--bs-w);
+    height: var(--bs-h);
+    border-radius: 36px;
+    overflow: hidden;
+    background: #0a0f1c;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        inset 0 0 0 6px #05070d,
+        0 26px 64px rgba(0, 0, 0, 0.55);
+    timeline-scope: --bs;
 }
 
 /* Decorative app behind the sheet. */
 .bs-app {
-  position: absolute;
-  inset: 0;
-  padding: 20px 18px;
+    position: absolute;
+    inset: 0;
+    padding: 20px 18px;
 }
 .bs-app-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 6px 16px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 6px 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e2e8f0;
 }
 .bs-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 .bs-tile {
-  aspect-ratio: 1;
-  border-radius: 16px;
-  background: linear-gradient(
-    155deg,
-    hsl(calc(var(--i) * 48) 70% 58%),
-    hsl(calc(var(--i) * 48 + 30) 65% 44%)
-  );
+    aspect-ratio: 1;
+    border-radius: 16px;
+    background: linear-gradient(
+        155deg,
+        hsl(calc(var(--i) * 48) 70% 58%),
+        hsl(calc(var(--i) * 48 + 30) 65% 44%)
+    );
 }
 
 /* The scroll-snap sheet, overlaid on the app. */
 .bs-scroller {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  scroll-timeline: --bs y;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    scroll-timeline: --bs y;
 }
 .bs-scroller::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* Dims the app as the sheet rises — pure scroll-driven animation. Sits between
    the app and the (transparent) sheet rungs, so it only shows above the panel. */
 .bs-dim {
-  position: absolute;
-  inset: 0;
-  background: #02040a;
-  animation: bs-dim linear both;
-  animation-timeline: --bs;
+    position: absolute;
+    inset: 0;
+    background: #02040a;
+    animation: bs-dim linear both;
+    animation-timeline: --bs;
 }
 @keyframes bs-dim {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.6;
-  }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 0.6;
+    }
 }
 
 /* Each rung's top edge is a rest position: peek · half · full. */
 .bs-zone {
-  scroll-snap-align: start;
+    scroll-snap-align: start;
 }
 
 .bs-panel {
-  position: relative;
-  z-index: 1;
-  padding: 12px 22px 24px;
-  background: #141a2b;
-  border-radius: 26px 26px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
-  color: #e8eefc;
+    position: relative;
+    z-index: 1;
+    padding: 12px 22px 24px;
+    background: #141a2b;
+    border-radius: 26px 26px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
+    color: #e8eefc;
 }
 .bs-grip {
-  display: block;
-  width: 44px;
-  height: 5px;
-  margin: 6px auto 18px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.32);
-  cursor: pointer;
+    display: block;
+    width: 44px;
+    height: 5px;
+    margin: 6px auto 18px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.32);
+    cursor: pointer;
 }
 .bs-panel h4 {
-  margin: 0 0 16px;
-  font-size: 1.35rem;
-  font-weight: 700;
+    margin: 0 0 16px;
+    font-size: 1.35rem;
+    font-weight: 700;
 }
 .bs-share {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 18px;
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
 }
 .bs-app-icon {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.7rem;
-  color: #aab6cf;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.7rem;
+    color: #aab6cf;
 }
 .bs-app-icon b {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  font-size: 1.25rem;
-  color: #05070d;
-  background: linear-gradient(
-    155deg,
-    hsl(calc(var(--i) * 60) 80% 64%),
-    hsl(calc(var(--i) * 60 + 28) 72% 50%)
-  );
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 1.25rem;
+    color: #05070d;
+    background: linear-gradient(
+        155deg,
+        hsl(calc(var(--i) * 60) 80% 64%),
+        hsl(calc(var(--i) * 60 + 28) 72% 50%)
+    );
 }
 .bs-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 .bs-list li {
-  padding: 15px 6px;
-  font-size: 1.05rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 15px 6px;
+    font-size: 1.05rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Swipe-to-reveal row (Graffiti's `.swipe`): the iOS swipe-to-delete gesture
-   with no gesture library. Each row is a horizontal scroll-snap container laid
+/* Swipe-to-reveal row (Graffiti's `.swipe`): the iOS swipe gesture with no
+   gesture library and NO JS. Each row is a horizontal scroll-snap container laid
    out `auto 1fr auto`; the MIDDLE cell is `100cqw` (exactly the row's width), so
-   the two action buttons sit just offscreen. Native scroll IS the swipe;
-   `scroll-snap-align` springs it back to center or holds an action open. */
+   the two action buttons sit just offscreen. Native scroll IS the swipe. The
+   centered cell is the ONLY snap point (this is Graffiti's default `.swipe`, not
+   `.stop`), so a released swipe always springs straight back to center. */
 .swipe-inbox {
-  width: 380px;
-  border-radius: 30px;
-  overflow: hidden;
-  background: #0a0f1c;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 6px #05070d, 0 26px 64px rgba(0, 0, 0, 0.55);
+    width: 380px;
+    border-radius: 30px;
+    overflow: hidden;
+    background: #0a0f1c;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        inset 0 0 0 6px #05070d,
+        0 26px 64px rgba(0, 0, 0, 0.55);
 }
 .swipe-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 20px 22px 14px;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #e8eefc;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 20px 22px 14px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e8eefc;
 }
 .swipe-hint {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  opacity: 0.85;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    opacity: 0.85;
 }
 .swipe-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 /* one row = the whole technique. */
 .swipe {
-  container-type: inline-size;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  scrollbar-width: none;
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    scrollbar-width: none;
 }
 .swipe::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
-/* the visible row: middle cell, full container width → actions wait offscreen. */
+/* the visible row: middle cell, full container width → actions wait offscreen.
+   center is the only snap point, so a released swipe springs straight back. */
 .swipe-row {
-  inline-size: 100cqw;
-  scroll-snap-align: center;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 22px;
-  background: #0d1322;
-  border: none;
-  text-align: left;
-  color: inherit;
-  cursor: pointer;
+    inline-size: 100cqw;
+    scroll-snap-align: center;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px;
+    background: #0d1322;
 }
 .swipe-avatar {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  font-weight: 800;
-  color: #05070d;
-  background: linear-gradient(
-    155deg,
-    hsl(var(--h) 80% 64%),
-    hsl(calc(var(--h) + 28) 72% 50%)
-  );
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-weight: 800;
+    color: #05070d;
+    background: linear-gradient(
+        155deg,
+        hsl(var(--h) 80% 64%),
+        hsl(calc(var(--h) + 28) 72% 50%)
+    );
 }
 .swipe-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-  flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
 }
 .swipe-text b {
-  font-size: 1.05rem;
-  color: #e8eefc;
-}
-.swipe-star {
-  color: #f6c34a;
-  font-style: normal;
-  margin-right: 6px;
+    font-size: 1.05rem;
+    color: #e8eefc;
 }
 .swipe-text span {
-  font-size: 0.92rem;
-  color: #9fb0cf;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    font-size: 0.92rem;
+    color: #9fb0cf;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .swipe-time {
-  flex: 0 0 auto;
-  align-self: flex-start;
-  font-size: 0.8rem;
-  color: #6b7c99;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    font-size: 0.8rem;
+    color: #6b7c99;
 }
 
-/* the offscreen actions: a swipe snaps one fully into view (snap-align start/end). */
+/* the offscreen actions: a swipe peeks one into view, then it springs back.
+   no snap-align here — only the centered row snaps, so nothing holds open. */
 .swipe-act {
-  inline-size: 96px;
-  border: none;
-  border-radius: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5) inset;
+    inline-size: 96px;
+    border: none;
+    border-radius: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5) inset;
 }
 .swipe-act.pin {
-  scroll-snap-align: start;
-  background: #d9852b;
+    background: #d9852b;
 }
 .swipe-act.del {
-  scroll-snap-align: end;
-  background: #e0445b;
-}
-.swipe-empty {
-  padding: 42px;
-  text-align: center;
-  color: var(--accent);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+    background: #e0445b;
 }
 
 /* Anchor positioning (the Floating UI job): the menu is tied to the button with
    `position-anchor` and flips sides via `position-try-fallbacks` when it would
    run off the stage. The drag is JS; the positioning is 100% CSS. */
 .anchor-stage {
-  position: relative;
-  width: 560px;
-  height: 360px;
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: radial-gradient(
-      120% 120% at 50% 0%,
-      rgba(56, 189, 248, 0.08),
-      transparent 60%
-    ),
-    #0b1020;
-  overflow: hidden;
+    position: relative;
+    width: 560px;
+    height: 360px;
+    border-radius: 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    background:
+        radial-gradient(
+            120% 120% at 50% 0%,
+            rgba(56, 189, 248, 0.08),
+            transparent 60%
+        ),
+        #0b1020;
+    overflow: hidden;
 }
 .anchor-chip {
-  position: absolute;
-  anchor-name: --chip;
-  width: 132px;
-  height: 46px;
-  border: none;
-  border-radius: 12px;
-  background: var(--accent);
-  color: #04111b;
-  font-size: 1.05rem;
-  font-weight: 700;
-  cursor: grab;
-  touch-action: none; /* let the drag own the gesture, not the scroller */
-  user-select: none;
-  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.35);
+    position: absolute;
+    anchor-name: --chip;
+    width: 132px;
+    height: 46px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #04111b;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: grab;
+    touch-action: none; /* let the drag own the gesture, not the scroller */
+    user-select: none;
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.35);
 }
 .anchor-chip:active {
-  cursor: grabbing;
+    cursor: grabbing;
 }
 .anchor-pop {
-  /* anchored to the button — no JS measures or positions this */
-  position: absolute;
-  position-anchor: --chip;
-  position-area: block-end span-inline-end; /* below, left-aligned to the button */
-  position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-  margin: 8px 0;
+    /* anchored to the button — no JS measures or positions this */
+    position: absolute;
+    position-anchor: --chip;
+    position-area: block-end span-inline-end; /* below, left-aligned to the button */
+    position-try-fallbacks:
+        flip-block,
+        flip-inline,
+        flip-block flip-inline;
+    margin: 8px 0;
 
-  width: 184px;
-  padding: 8px;
-  list-style: none;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #151b2d;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  color: #e8eefc;
+    width: 184px;
+    padding: 8px;
+    list-style: none;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #151b2d;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    color: #e8eefc;
 }
 .anchor-pop li {
-  padding: 11px 14px;
-  border-radius: 9px;
-  font-size: 1.05rem;
+    padding: 11px 14px;
+    border-radius: 9px;
+    font-size: 1.05rem;
 }
 .anchor-pop li:hover {
-  background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.08);
 }
 .anchor-sep {
-  margin-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fca5a5;
+    margin-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fca5a5;
+}
+
+/* ── Customizable <select> ──────────────────────────────────────────────────
+   The dropdown people install react-select / Radix / Headless UI for. The ONE
+   opt-in below — `appearance: base-select` on BOTH the control and its
+   ::picker(select) popover — unlocks styling the whole thing, including the
+   option list that used to force a JS combobox. */
+.pick {
+    display: grid;
+    gap: 14px;
+    width: 420px;
+}
+.pick > label {
+    font-size: 1rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.pick-select,
+.pick-select::picker(select) {
+    appearance: base-select; /* opt the control AND its popover into styling */
+}
+
+.pick-select {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: #0b1020;
+    color: #e8eefc;
+    font: inherit;
+    padding: 0;
+}
+.pick-select::picker-icon {
+    display: none; /* we draw our own caret */
+}
+
+/* the custom trigger (first child of the select) */
+.pick-select button {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.pick-select:open button {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* <selectedcontent> is the live clone of the chosen option inside the button */
+.pick-select selectedcontent {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+}
+.pick-select selectedcontent .pick-role {
+    display: none; /* trigger shows the avatar + name only */
+}
+
+.pick-caret {
+    width: 9px;
+    height: 9px;
+    margin-left: auto;
+    border-right: 2px solid #94a3b8;
+    border-bottom: 2px solid #94a3b8;
+    translate: 0 -2px;
+    rotate: 45deg;
+    transition: rotate 0.25s ease;
+}
+.pick-select:open .pick-caret {
+    rotate: 225deg;
+}
+
+/* the popover list — it's a real popover, so it can animate open */
+.pick-select::picker(select) {
+    width: anchor-size(width); /* match the trigger width */
+    margin-top: 8px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    background: #151b2d;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+
+    opacity: 0;
+    translate: 0 -6px;
+    transition:
+        opacity 0.18s ease,
+        translate 0.18s ease,
+        display 0.18s allow-discrete,
+        overlay 0.18s allow-discrete;
+}
+.pick-select:open::picker(select) {
+    opacity: 1;
+    translate: 0;
+}
+@starting-style {
+    .pick-select:open::picker(select) {
+        opacity: 0;
+        translate: 0 -6px;
+    }
+}
+
+.pick-select option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #e8eefc;
+}
+.pick-select option::checkmark {
+    display: none; /* drop the native tick — :checked carries the state */
+}
+.pick-select option:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+.pick-select option:checked {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.pick-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: hsl(var(--h) 65% 48%);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.pick-meta {
+    display: grid;
+    gap: 2px;
+}
+.pick-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+.pick-role {
+    font-size: 0.92rem;
+    color: #94a3b8;
 }
 
 /* Supply-chain contrast: the same dropdown as an install vs. as the platform.
    Left = a dependency tree you inherit; right = CSS that ships with no deps. */
 .dep {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 26px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 26px;
 }
 .dep-col {
-  align-self: stretch;
-  padding: 24px 26px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0b1020;
+    align-self: stretch;
+    padding: 24px 26px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0b1020;
 }
 .dep-col--lib {
-  border-color: rgba(248, 113, 113, 0.35);
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.08), #0b1020 60%);
+    border-color: rgba(248, 113, 113, 0.35);
+    background: linear-gradient(180deg, rgba(248, 113, 113, 0.08), #0b1020 60%);
 }
 .dep-col--web {
-  border-color: rgba(56, 189, 248, 0.4);
-  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08), #0b1020 60%);
+    border-color: rgba(56, 189, 248, 0.4);
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.08), #0b1020 60%);
 }
 .dep-head {
-  margin: 0 0 16px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #cbd5e1;
+    margin: 0 0 16px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #cbd5e1;
 }
 .dep-cmd {
-  display: block;
-  margin-bottom: 16px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.1rem;
-  color: #f8fafc;
+    display: block;
+    margin-bottom: 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.1rem;
+    color: #f8fafc;
 }
 .dep-tree {
-  margin: 0 0 18px;
-  padding: 0;
-  list-style: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.05rem;
-  color: #94a3b8;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.05rem;
+    color: #94a3b8;
 }
 .dep-tree li {
-  padding: 4px 0;
-  padding-left: calc(var(--depth) * 22px);
+    padding: 4px 0;
+    padding-left: calc(var(--depth) * 22px);
 }
 .dep-tree li::before {
-  content: '└─ ';
-  color: #64748b;
+    content: "└─ ";
+    color: #64748b;
 }
 .dep-tree li:first-child {
-  color: #e2e8f0;
+    color: #e2e8f0;
 }
 .dep-tree li:first-child::before {
-  content: '';
+    content: "";
 }
 .dep-code {
-  margin: 0 0 18px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.1rem;
-  line-height: 1.5;
-  color: #7dd3fc;
-  white-space: pre;
+    margin: 0 0 18px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #7dd3fc;
+    white-space: pre;
 }
 .dep-foot {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.4;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.4;
 }
 .dep-foot--bad {
-  color: #fca5a5;
+    color: #fca5a5;
 }
 .dep-foot--good {
-  color: #7ee7c7;
+    color: #7ee7c7;
 }
 .dep-vs {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #64748b;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #64748b;
 }
 
 /* A slide that opts into the centered stage (overlay--center) without being a
    code-hero slide — for a wide centerpiece demo. */
 .card--wide {
-  max-width: 1180px;
-  width: max-content;
+    max-width: 1180px;
+    width: max-content;
+}
+
+/* Out-of-order streaming: a results list whose SLOTS are reserved in document
+   order (the numbered 1–5 boxes) but whose content streams in out of order and
+   lands in the right slot anyway (left), beside the real declarative source
+   (right). The slot index stays fixed; only the fill order scrambles — that's
+   the feature. The fill is JS-simulated; the code shown is the genuine API. */
+.stream {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 26px;
+    width: 1040px;
+}
+.stream-panel,
+.stream-code-col {
+    padding: 22px 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0b1020;
+}
+.stream-panel {
+    border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--accent) 8%, #0b1020),
+        #0b1020 62%
+    );
+}
+.stream-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #cbd5e1;
+}
+.stream-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: stream-pulse 1.4s ease-in-out infinite;
+}
+@keyframes stream-pulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+.stream-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.stream-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 52px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 1.15rem;
+}
+.stream-idx {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.95rem;
+    color: #94a3b8;
+}
+.stream-skel {
+    flex: 1;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0.05)
+    );
+    background-size: 200% 100%;
+    animation: stream-shimmer 1.4s linear infinite;
+}
+@keyframes stream-shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+.stream-row.is-filled {
+    background: color-mix(
+        in srgb,
+        var(--accent) 12%,
+        rgba(255, 255, 255, 0.03)
+    );
+}
+.stream-row.is-filled .stream-idx {
+    background: color-mix(in srgb, var(--accent) 32%, transparent);
+    color: #04111b;
+}
+.stream-hit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #e2e8f0;
+    animation: stream-land 0.45s ease both;
+}
+@keyframes stream-land {
+    from {
+        opacity: 0;
+        transform: translateY(7px);
+        filter: blur(4px);
+    }
+}
+.stream-check {
+    color: var(--accent);
+    font-weight: 700;
+}
+.stream-code-col {
+    display: flex;
+    flex-direction: column;
+}
+.stream-code-col .code {
+    flex: 1;
+    margin: 0;
+    font-size: 1.05rem;
+}
+.stream-compat {
+    margin: 14px 0 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fca5a5;
 }
 
 /* Hover tooltip for the 3D browser-support coins (drei <Html>, so it lives
    outside the scaled stage — sizes in real px). Tinted to the hovered browser
    via --tip. Sits to the left of the coin (coins hug the right margin). */
 .support-tip {
-  transform: translateX(-114%);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 14px 22px;
-  border-radius: 16px;
-  white-space: nowrap;
-  background: rgba(9, 12, 20, 0.92);
-  border: 1px solid color-mix(in srgb, var(--tip, #38bdf8) 55%, transparent);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55),
-    0 0 28px -6px color-mix(in srgb, var(--tip, #38bdf8) 60%, transparent);
-  backdrop-filter: blur(6px);
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  color: #eef3fb;
+    transform: translateX(-114%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 14px 22px;
+    border-radius: 16px;
+    white-space: nowrap;
+    background: rgba(9, 12, 20, 0.92);
+    border: 1px solid color-mix(in srgb, var(--tip, #38bdf8) 55%, transparent);
+    box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.55),
+        0 0 28px -6px color-mix(in srgb, var(--tip, #38bdf8) 60%, transparent);
+    backdrop-filter: blur(6px);
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        sans-serif;
+    color: #eef3fb;
 }
 .support-tip strong {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
 }
 .support-tip span {
-  font-size: 22px;
-  color: #b7c6dc;
+    font-size: 22px;
+    color: #b7c6dc;
 }
 
 .hud {
-  position: absolute;
-  top: 40px;
-  right: 56px;
-  left: 56px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 1rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #64748b;
+    position: absolute;
+    top: 40px;
+    right: 56px;
+    left: 56px;
+    display: flex;
+    justify-content: flex-end;
+    font-size: 1rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #64748b;
 }
 
 @keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
 }
