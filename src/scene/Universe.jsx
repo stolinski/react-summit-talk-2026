@@ -7,6 +7,7 @@ import { LogoConstellation } from './LogoConstellation.jsx'
 import { BrowserSupport } from './BrowserSupport.jsx'
 import { Sandworm } from './Sandworm.jsx'
 import { ReactAtom } from './ReactAtom.jsx'
+import { HtmlPanel } from './HtmlPanel.jsx'
 import { GALAXY } from './layout.js'
 import { slides } from '../slides/index.js'
 import { useStore } from '../state/useStore.js'
@@ -48,6 +49,7 @@ export function Universe() {
   const index = useStore((s) => s.index)
   const wormShow = Boolean(slides[index]?.worm)
   const atomShow = slides[index]?.id === 'system'
+  const htmlPanelShow = slides[index]?.id === 'html-canvas-reveal'
   return (
     <>
       <ambientLight intensity={0.15} />
@@ -74,6 +76,11 @@ export function Universe() {
           "React is one planet" beat. Isolated at +z so framing it never catches
           the sun or the other planets. */}
       <ReactAtom position={[0, 12, 120]} show={atomShow} />
+
+      {/* html-in-canvas FINALE: the talk's own card as a live CanvasTexture on a
+          3D panel that the bleeding-edge planet eclipses (the world outside React,
+          made literal). Shown on the `html-canvas-reveal` slide. */}
+      <HtmlPanel position={[132, 14, 44]} accent="#f5d0fe" show={htmlPanelShow} />
 
       {/* 3D browser-support readout (per-slide `support` field). */}
       <BrowserSupport />

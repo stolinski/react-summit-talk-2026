@@ -36,6 +36,61 @@ const fragmentShader = /* glsl */ `
   }
 `
 
+// Galactic nucleus — a camera-facing additive glow (NOT a solid sphere, which
+// read as a planet). A tight white-hot core falls off into a broad warm halo;
+// bloom turns it into the blazing heart of the galaxy.
+const coreVert = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const coreFrag = /* glsl */ `
+  uniform vec3 uHot;
+  uniform vec3 uWarm;
+  varying vec2 vUv;
+  void main() {
+    float r = length(vUv - 0.5) * 2.0;   // 0 at center, 1 at plane edge
+    if (r > 1.0) discard;
+    float halo = pow(1.0 - r, 2.6);                       // broad soft glow
+    float core = pow(1.0 - clamp(r / 0.16, 0.0, 1.0), 3.0); // tight nucleus
+    vec3 col = mix(uWarm, uHot, core);
+    float a = halo * 0.6 + core * 0.95;
+    gl_FragColor = vec4(col * (0.85 + core * 0.7), a);
+  }
+`
+
+// A flat accretion ring lying in the disk plane: a hot, bright inner lip that
+// fades outward, leaving a darker gap between it and the nucleus — the bright-
+// ring-around-a-dim-heart silhouette of a black hole / active galactic core.
+const ringVert = /* glsl */ `
+  varying vec3 vLocal;
+  void main() {
+    vLocal = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const ringFrag = /* glsl */ `
+  uniform vec3 uHot;
+  uniform vec3 uWarm;
+  uniform float uInner;
+  uniform float uOuter;
+  varying vec3 vLocal;
+  void main() {
+    float d = length(vLocal.xy);
+    float t = (d - uInner) / (uOuter - uInner);
+    if (t < 0.0 || t > 1.0) discard;
+    float lip = smoothstep(0.2, 0.0, t);     // hot bright inner edge
+    float body = pow(1.0 - t, 1.8) * 0.45;   // disk fading outward
+    vec3 col = mix(uWarm, uHot, lip);
+    float a = lip * 0.85 + body;
+    gl_FragColor = vec4(col, a);
+  }
+`
+
 export function Galaxy({
   center = [0, 0, 0],
   count = 200000,
@@ -47,6 +102,7 @@ export function Galaxy({
 }) {
   const coreRadius = radius * 0.022
   const group = useRef()
+  const coreGlow = useRef()
 
   const [positions, colors, scales] = useMemo(() => {
     const positions = new Float32Array(count * 3)
@@ -81,33 +137,80 @@ export function Galaxy({
 
   const uniforms = useMemo(() => ({ uSize: { value: 360 } }), [])
 
-  // ~12 minutes per rotation: alive, never busy.
-  useFrame((_, dt) => {
+  const coreUniforms = useMemo(
+    () => ({
+      uHot: { value: new THREE.Color('#fff6e6') },
+      uWarm: { value: new THREE.Color('#ffce92') },
+    }),
+    []
+  )
+  const ringUniforms = useMemo(
+    () => ({
+      uHot: { value: new THREE.Color('#fff0cf') },
+      uWarm: { value: new THREE.Color('#ffae6e') },
+      uInner: { value: coreRadius * 3.0 },
+      uOuter: { value: coreRadius * 7.5 },
+    }),
+    [coreRadius]
+  )
+
+  // ~12 minutes per rotation: alive, never busy. The nucleus stays
+  // camera-facing so its glow reads the same from any angle.
+  useFrame((state, dt) => {
     if (group.current) group.current.rotation.y += dt * 0.008
+    if (coreGlow.current) coreGlow.current.quaternion.copy(state.camera.quaternion)
   })
 
+  const nucleusSize = coreRadius * 6
+
   return (
-    <group ref={group} position={center}>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-          <bufferAttribute attach="attributes-aColor" args={[colors, 3]} />
-          <bufferAttribute attach="attributes-aScale" args={[scales, 1]} />
-        </bufferGeometry>
+    <group position={center}>
+      {/* the spinning disk of stars */}
+      <group ref={group}>
+        <points>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+            <bufferAttribute attach="attributes-aColor" args={[colors, 3]} />
+            <bufferAttribute attach="attributes-aScale" args={[scales, 1]} />
+          </bufferGeometry>
+          <shaderMaterial
+            uniforms={uniforms}
+            vertexShader={vertexShader}
+            fragmentShader={fragmentShader}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            transparent
+          />
+        </points>
+      </group>
+
+      {/* Galactic nucleus — a soft, blooming glow (camera-facing billboard). */}
+      <mesh ref={coreGlow} renderOrder={2}>
+        <planeGeometry args={[nucleusSize, nucleusSize]} />
         <shaderMaterial
-          uniforms={uniforms}
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
+          uniforms={coreUniforms}
+          vertexShader={coreVert}
+          fragmentShader={coreFrag}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           transparent
+          toneMapped={false}
         />
-      </points>
+      </mesh>
 
-      {/* Glowing galactic core. */}
-      <mesh>
-        <sphereGeometry args={[coreRadius, 32, 32]} />
-        <meshBasicMaterial color="#fff0cf" toneMapped={false} />
+      {/* Accretion ring in the disk plane — the black-hole read. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
+        <ringGeometry args={[ringUniforms.uInner.value, ringUniforms.uOuter.value, 180]} />
+        <shaderMaterial
+          uniforms={ringUniforms}
+          vertexShader={ringVert}
+          fragmentShader={ringFrag}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          transparent
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
       </mesh>
     </group>
   )

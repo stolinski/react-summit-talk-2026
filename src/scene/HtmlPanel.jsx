@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { DissolveCard } from './DissolveCard.jsx'
 import {
   HTML_IN_CANVAS_SUPPORTED,
   paintElement,
@@ -8,35 +9,28 @@ import {
 } from '../lib/htmlInCanvas.js'
 
 /**
- * THE html-in-canvas FINALE — the talk's own card, pulled INTO the universe.
+ * THE html-in-canvas FINALE — the talk's own card, pulled INTO the universe and
+ * then handed to the GPU.
  *
- * For the whole talk the readable DOM has floated *over* the WebGL (a drei
- * <Html> sticker on the glass): it can't bloom, and a planet can't pass in front
- * of it. Here we invert that. `ctx.drawElementImage()` rasterizes a live DOM
- * card into a 2D <canvas>; that canvas is a THREE.CanvasTexture on a real mesh —
- * so the card now blooms (Effects.jsx) and the bleeding-edge planet genuinely
- * ECLIPSES it as the panel orbits behind. The DOM stopped being an overlay and
- * became a citizen of the 3D world.
+ * `ctx.drawElementImage()` rasterizes a live DOM card into a <canvas>; that
+ * canvas is a THREE.CanvasTexture. But drawing DOM that looks like the DOM isn't
+ * the point — the point is what's possible ONCE it's a texture. So the card
+ * forms as a crisp panel, then every pixel becomes a star that swirls out into
+ * the galaxy and reforms (DissolveCard), orbiting the bleeding-edge planet that
+ * eclipses it, blooming via Effects. The overlay this whole talk floats over
+ * could do none of this.
  *
- * The real API ships in Chrome 148 behind a flag (see htmlInCanvas.js). With the
- * flag OFF — local dev, or a stage projector that didn't flip it — we hand-draw
- * a faithful copy of the card with plain Canvas 2D, so the reveal still lands
- * (the motion, bloom and eclipse are identical; only the rasterizer differs).
- *
- * Gated by the `html-canvas-reveal` slide via Universe (`show`); materializes,
- * billboards toward the camera with a gentle 3D rock, and slowly orbits the
- * planet so it rises out of and sets behind the limb. Calm motion per the house
- * rule — smooth transforms only, no per-frame noise.
+ * Real API ships in Chrome 148 behind a flag (see htmlInCanvas.js); with it off
+ * we hand-draw a faithful copy of the card, so the reveal is identical bar the
+ * rasterizer. Calm motion per the house rule — smooth transforms only.
  */
 
 const TEX_W = 1024
 const TEX_H = 640
-const CARD_W = 9.2 // world units (matches the 1.6 texture aspect)
+const CARD_W = 9.2
 const CARD_H = CARD_W * (TEX_H / TEX_W)
+const LOOP = 15 // seconds: forms, holds readable, scatters into stars, repeats
 
-// Build the live source card (real DOM) that drawElementImage rasterizes. It
-// must be a child of the <canvas layoutsubtree>; it's laid out but never painted
-// to screen (the canvas bitmap is what shows). Only built when the API exists.
 function buildSourceCard(accent) {
   const card = document.createElement('div')
   card.style.cssText = `
@@ -62,7 +56,6 @@ function buildSourceCard(accent) {
         <div style="position:absolute; left:62%; top:50%; transform:translate(-50%,-50%); width:42px; height:42px; border-radius:50%; background:#f8fafc; box-shadow:0 0 26px ${accent}"></div>
       </div>
     </div>`
-  // a real blinking caret, so the rasterized texture visibly lives
   const style = document.createElement('style')
   style.textContent =
     '@keyframes hc-blink{50%{opacity:0}} .hc-caret{animation:hc-blink 1s steps(1) infinite}'
@@ -70,8 +63,6 @@ function buildSourceCard(accent) {
   return card
 }
 
-// Soft radial halo behind the panel so the whole card reads as a glowing object
-// (gives the bloom something to grab even where the card itself is dark).
 function makeGlowTexture(accent) {
   const c = document.createElement('canvas')
   c.width = c.height = 256
@@ -79,8 +70,8 @@ function makeGlowTexture(accent) {
   const g = ctx.createRadialGradient(128, 128, 10, 128, 128, 128)
   const col = new THREE.Color(accent)
   const rgb = `${(col.r * 255) | 0}, ${(col.g * 255) | 0}, ${(col.b * 255) | 0}`
-  g.addColorStop(0, `rgba(${rgb}, 0.55)`)
-  g.addColorStop(0.4, `rgba(${rgb}, 0.22)`)
+  g.addColorStop(0, `rgba(${rgb}, 0.5)`)
+  g.addColorStop(0.4, `rgba(${rgb}, 0.2)`)
   g.addColorStop(1, `rgba(${rgb}, 0)`)
   ctx.fillStyle = g
   ctx.fillRect(0, 0, 256, 256)
@@ -97,25 +88,34 @@ export function HtmlPanel({
 }) {
   const root = useRef() // orbits + billboards toward the camera
   const tilt = useRef() // gentle 3D rock so it never reads as a flat sticker
-  const cardMat = useRef()
   const glowMat = useRef()
   const amp = useRef(0)
   const time = useRef(0)
+  const dissolveRef = useRef(0)
+  const opacityRef = useRef(0)
   const { camera, gl } = useThree()
 
-  // The drawing surface (CanvasTexture source) + the live source card.
   const { canvas, ctx, sourceCard, texture, glowTexture } = useMemo(() => {
     const canvas = document.createElement('canvas')
     canvas.width = TEX_W
     canvas.height = TEX_H
     let sourceCard = null
     if (HTML_IN_CANVAS_SUPPORTED) {
-      // The canvas must opt its children into layout; the card lives inside it.
       canvas.setAttribute('layoutsubtree', '')
+      // CRITICAL: the global `canvas { position: fixed; inset: 0 }` rule (for the
+      // full-bleed WebGL canvas) would otherwise rip this offscreen host canvas
+      // out of its parent and pin it over the whole viewport — drawing the card
+      // bitmap on top of every slide forever. Inline styles override it so it
+      // stays offscreen (it only needs to be laid out, not visible).
+      canvas.style.cssText =
+        'position:absolute; inset:auto; left:0; top:0; pointer-events:none;'
       const host = document.createElement('div')
       host.setAttribute('data-html-in-canvas', '')
+      host.setAttribute('aria-hidden', 'true')
+      // Offscreen but NOT opacity:0 — drawElementImage rasterizes the painted
+      // appearance, so a transparent host would draw nothing.
       host.style.cssText =
-        'position:fixed; left:-20000px; top:0; width:' + TEX_W + 'px; height:' + TEX_H + 'px; pointer-events:none; opacity:0;'
+        'position:fixed; left:-20000px; top:0; width:' + TEX_W + 'px; height:' + TEX_H + 'px; pointer-events:none; overflow:hidden; z-index:-1;'
       sourceCard = buildSourceCard(accent)
       canvas.appendChild(sourceCard)
       host.appendChild(canvas)
@@ -124,13 +124,17 @@ export function HtmlPanel({
     const ctx = canvas.getContext('2d')
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
+    // LinearFilter / no mipmaps: the points shader fetches this in the vertex
+    // stage, and the texture is non-power-of-two.
+    texture.minFilter = THREE.LinearFilter
+    texture.magFilter = THREE.LinearFilter
+    texture.generateMipmaps = false
     texture.anisotropy = gl.capabilities.getMaxAnisotropy?.() ?? 1
     const glowTexture = makeGlowTexture(accent)
     return { canvas, ctx, sourceCard, texture, glowTexture }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Tear down the offscreen DOM + GPU resources on unmount.
   useEffect(() => {
     return () => {
       texture.dispose()
@@ -148,57 +152,62 @@ export function HtmlPanel({
     if (!g) return
     amp.current = THREE.MathUtils.damp(amp.current, show ? 1 : 0, 2.4, dt)
     const a = amp.current
+    opacityRef.current = a
     g.visible = a > 0.01
     if (!g.visible) return
 
     time.current += dt
     const t = time.current
 
-    // Repaint the texture: real DOM via drawElementImage, else hand-drawn card.
+    // Repaint the texture every frame: real DOM via drawElementImage, else card.
     if (!paintElement(ctx, sourceCard, TEX_W, TEX_H)) {
       drawTalkCardFallback(ctx, TEX_W, TEX_H, { accent, time: t })
     }
     texture.needsUpdate = true
 
-    // Orbit the planet in world X–Z (camera looks roughly +X, so the +X arc of
-    // the orbit passes BEHIND the planet → it eclipses the card), with a small
-    // Y bob so it rises and sets rather than circling flat.
+    // Breathe: form from stars → hold readable → scatter into the galaxy → repeat.
+    const u = (t % LOOP) / LOOP
+    let d
+    if (u < 0.13) d = 1 - THREE.MathUtils.smootherstep(u / 0.13, 0, 1)
+    else if (u < 0.6) d = 0
+    else if (u < 0.82) d = THREE.MathUtils.smootherstep((u - 0.6) / 0.22, 0, 1)
+    else d = 1
+    dissolveRef.current = d
+
+    // Orbit the planet in world X–Z (camera looks roughly +X, so the +X arc tucks
+    // behind the planet → it eclipses the card), with a small Y bob.
     const ang = t * 0.34
     g.position.set(
       center.x + Math.cos(ang) * orbitRadius,
       center.y + Math.sin(ang) * orbitRadius * 0.34,
       center.z + Math.sin(ang) * orbitRadius
     )
-    // Billboard toward the camera so the card stays readable through the orbit…
-    g.lookAt(camera.position)
-    // …then a gentle rock on the inner group proves it's a real 3D surface.
+    g.lookAt(camera.position) // billboard so the formed card stays readable
     if (tilt.current) {
-      tilt.current.rotation.y = 0.32 * Math.sin(t * 0.5)
-      tilt.current.rotation.x = 0.16 * Math.sin(t * 0.62)
-      const s = 0.78 + 0.22 * a
-      tilt.current.scale.setScalar(s)
+      tilt.current.rotation.y = 0.3 * Math.sin(t * 0.5)
+      tilt.current.rotation.x = 0.15 * Math.sin(t * 0.62)
+      tilt.current.scale.setScalar(0.82 + 0.18 * a)
     }
-    if (cardMat.current) cardMat.current.opacity = a
-    if (glowMat.current) glowMat.current.opacity = a * 0.9
+    if (glowMat.current) glowMat.current.opacity = a * (1 - 0.7 * d)
   })
 
   return (
     <group ref={root} visible={false}>
       <group ref={tilt}>
-        {/* the card itself — DoubleSide so a deep rock never shows a black back */}
-        <mesh renderOrder={2}>
-          <planeGeometry args={[CARD_W, CARD_H]} />
-          <meshBasicMaterial
-            ref={cardMat}
-            map={texture}
-            transparent
-            toneMapped={false}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
+        <DissolveCard
+          texture={texture}
+          width={CARD_W}
+          height={CARD_H}
+          cols={184}
+          rows={115}
+          spread={7}
+          size={2.2}
+          intensity={0.7}
+          dissolveRef={dissolveRef}
+          opacityRef={opacityRef}
+        />
         {/* soft accent halo behind it → bloom + "glowing object" read */}
-        <mesh position={[0, 0, -0.05]} renderOrder={1}>
+        <mesh position={[0, 0, -0.06]} renderOrder={-1}>
           <planeGeometry args={[CARD_W * 1.5, CARD_H * 1.7]} />
           <meshBasicMaterial
             ref={glowMat}

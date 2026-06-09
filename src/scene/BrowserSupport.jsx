@@ -21,6 +21,7 @@ import { useStore } from '../state/useStore.js'
  *   'partial'                    behind a flag
  *   { since: '125' }             shipped since v125
  *   { since: '121', flag: true } behind a flag (since v121)
+ *   { flag: true, label: '…' }   flagged; custom tooltip (e.g. Tech Preview)
  *
  * Logos live in /public/logos/ (white on transparent); brand colors are
  * placeholders. Tooltip wording is scaffold — Scott owns the language.
@@ -33,6 +34,9 @@ const ENGINES = [
 ]
 
 const OFFSET = new THREE.Vector3(3.5, 0, -6) // camera-local: right margin, centered
+// Wide slides (`split`/`center`) push the card out toward the coin column, so on
+// those we shove the coins further right to clear the card's right edge.
+const WIDE_OFFSET = new THREE.Vector3(4.8, 0, -6)
 const SPACING = 0.95
 
 // Normalize a support value → glow level + a tooltip label.
@@ -41,8 +45,8 @@ function parse(value) {
   if (value === 'partial') return { level: 0.45, label: 'Behind a flag' }
   if (value && typeof value === 'object') {
     if (value.flag)
-      return { level: 0.45, label: value.since ? `v${value.since} · behind a flag` : 'Behind a flag' }
-    return { level: 1, label: value.since ? `Since v${value.since}` : 'Supported' }
+      return { level: 0.45, label: value.label ?? (value.since ? `v${value.since} · behind a flag` : 'Behind a flag') }
+    return { level: 1, label: value.label ?? (value.since ? `Since v${value.since}` : 'Supported') }
   }
   return { level: 0, label: 'Not supported yet' }
 }
@@ -119,6 +123,8 @@ function rasterize(src) {
 export function BrowserSupport() {
   const index = useStore((s) => s.index)
   const support = slides[index]?.support
+  // On wide slides the card reaches the coin column — clear it by shifting right.
+  const wide = Boolean(slides[index]?.split || slides[index]?.center)
 
   const [textures, setTextures] = useState(null)
   const [hovered, setHovered] = useState(null)
@@ -164,7 +170,7 @@ export function BrowserSupport() {
     const g = group.current
     if (!g || !materials) return
 
-    tmp.copy(OFFSET).applyQuaternion(camera.quaternion)
+    tmp.copy(wide ? WIDE_OFFSET : OFFSET).applyQuaternion(camera.quaternion)
     g.position.copy(camera.position).add(tmp)
     g.quaternion.copy(camera.quaternion)
 

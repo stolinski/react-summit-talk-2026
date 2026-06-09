@@ -92,6 +92,7 @@ export function drawTalkCardFallback(ctx, w, h, opts = {}) {
         text = "Hello from the DOM",
         theme = "Aurora",
         time = 0,
+        fill = null, // 0–1 slider position; when null the knob drifts on its own
     } = opts;
 
     const pad = Math.round(w * 0.07);
@@ -161,7 +162,7 @@ export function drawTalkCardFallback(ctx, w, h, opts = {}) {
     ctx.textBaseline = "top";
     const trackY = y + Math.round(w * 0.02);
     const trackW = w - pad * 2;
-    const knobT = 0.5 + 0.42 * Math.sin(time * 0.9);
+    const knobT = fill != null ? Math.max(0, Math.min(1, fill)) : 0.5 + 0.42 * Math.sin(time * 0.9);
     roundRect(ctx, pad, trackY, trackW, Math.max(4, w * 0.012), w * 0.012);
     ctx.fillStyle = "rgba(255,255,255,0.12)";
     ctx.fill();

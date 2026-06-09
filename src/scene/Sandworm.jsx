@@ -17,27 +17,28 @@ import { snoise } from '../shaders/snoise.js'
  * tapered tail and a flared, toothed maw on the leading end (dark gullet). It
  * rises out as `show` ramps (uAmp grows the breach + radius from inside).
  */
-const T = 230 // length samples
-const RING = 96 // cross-section resolution (high → smooth tube + cleanly-sampled teeth)
-const RIDGE_FREQ = 30 // geometric ring segments
-const TEETH = 32 // fangs ringing the maw (well below RING so they never alias)
+const T = 260 // length samples
+const RING = 110 // cross-section resolution (high → smooth tube + cleanly-sampled teeth)
+const RIDGE_FREQ = 26 // geometric ring segments (armor bands)
+const TEETH = 28 // fangs per row around the maw (well below RING so they never alias)
 
 function buildWorm(R) {
-  // Radial profile along the body (u: 0 = tail tip, 1 = mouth). The body holds an
-  // even thickness, swells smoothly into a single rounded lip, then the throat
-  // folds back toward a dark point — no thin "neck" and no trumpet flare, so the
-  // maw reads as an open round mouth rather than an odd hourglass-and-bell.
+  // Radial profile along the body (u: 0 = tail tip, 1 = mouth). A heavy, even
+  // body swells into a broad rounded lip, then the throat folds back to a dark
+  // point — no thin neck, no trumpet. The lip is wide so the maw reads as a big
+  // open mouth, the way a Shai-Hulud should.
   const profile = (u) => {
     let r
-    if (u < 0.08) r = THREE.MathUtils.lerp(0.015, 0.2, u / 0.08) // tail tip
-    else if (u < 0.66) r = 0.2 // body
+    if (u < 0.05) r = THREE.MathUtils.lerp(0.0, 0.26, THREE.MathUtils.smootherstep(u, 0.0, 0.05)) // tail tip
+    else if (u < 0.64) r = THREE.MathUtils.lerp(0.26, 0.3, THREE.MathUtils.smootherstep(u, 0.05, 0.64)) // body, gently thickening toward the head
     else if (u < 0.86)
-      r = THREE.MathUtils.lerp(0.2, 0.34, THREE.MathUtils.smootherstep(u, 0.66, 0.86)) // swell into the lip
-    else r = THREE.MathUtils.lerp(0.34, 0.04, THREE.MathUtils.smootherstep(u, 0.86, 1.0)) // throat folds in
-    // segment ridges live on the body only — faded out before the lip so the rim stays clean
+      r = THREE.MathUtils.lerp(0.3, 0.46, THREE.MathUtils.smootherstep(u, 0.64, 0.86)) // swell into the lip
+    else r = THREE.MathUtils.lerp(0.46, 0.05, THREE.MathUtils.smootherstep(u, 0.86, 1.0)) // throat folds in
+    // subtle geometric segmentation on the body (most of the armor look is shaded
+    // in the fragment shader); faded out before the lip so the rim stays clean
     const ridge =
-      THREE.MathUtils.smoothstep(u, 0.06, 0.12) * (1 - THREE.MathUtils.smoothstep(u, 0.58, 0.7))
-    r += 0.025 * ridge * Math.sin(u * RIDGE_FREQ * Math.PI * 2)
+      THREE.MathUtils.smoothstep(u, 0.05, 0.12) * (1 - THREE.MathUtils.smoothstep(u, 0.58, 0.7))
+    r += 0.014 * ridge * Math.sin(u * RIDGE_FREQ * Math.PI * 2)
     return r * R
   }
 
@@ -49,22 +50,28 @@ function buildWorm(R) {
   const AX = 2.7 * R
   const ROWS = T + 1
   const COLS = RING + 1
-  // sp[i][j] = [x, y, z, theta, radius] for each grid vertex
+  // sp[i][j] = [x, y, z, theta, radius, axialOffset, toothStrength] per grid vertex
   const sp = []
   for (let i = 0; i < ROWS; i++) {
     const u = i / T
     const baseR = profile(u)
-    // a dense crown of fangs rings the rim; the throat recedes into a dark gullet
-    const teethBand =
-      THREE.MathUtils.smoothstep(u, 0.8, 0.88) * (1 - THREE.MathUtils.smoothstep(u, 0.9, 0.965))
-    const gullet = THREE.MathUtils.smoothstep(u, 0.86, 1.0) * -0.8 * R
+    // Two concentric rows of fangs ring the maw: a prominent outer row at the lip
+    // and a smaller inner row set deeper in (staggered half a tooth), so it reads
+    // as the layered crystalline teeth of a sandworm rather than one spiky ring.
+    const outer = THREE.MathUtils.smoothstep(u, 0.79, 0.84) * (1 - THREE.MathUtils.smoothstep(u, 0.86, 0.9))
+    const inner = THREE.MathUtils.smoothstep(u, 0.9, 0.925) * (1 - THREE.MathUtils.smoothstep(u, 0.945, 0.975))
+    const isInner = inner > outer
+    const teethBand = Math.max(outer, inner)
+    const phase = isInner ? Math.PI / 2 : 0 // half-tooth stagger between the rows
+    // throat recedes into a deep dark gullet
+    const gullet = THREE.MathUtils.smoothstep(u, 0.84, 1.0) * -0.95 * R
     const row = []
     for (let j = 0; j < COLS; j++) {
       const th = (j / RING) * Math.PI * 2
-      const fang = Math.pow(Math.abs(Math.sin(th * (TEETH / 2))), 8) * teethBand
-      const rr = baseR + fang * 0.03 * R // fangs sit just proud of the lip…
-      const axial = gullet + fang * 0.18 * R // …and jut forward, ringing the opening
-      row.push([rr * Math.cos(th), rr * Math.sin(th), u * AX + axial, th, rr, axial])
+      const fang = Math.pow(Math.abs(Math.sin(th * (TEETH / 2) + phase)), 6) * teethBand
+      const rr = baseR - fang * 0.05 * R // fang tips lean inward, toward the throat…
+      const axial = gullet + fang * 0.26 * R // …and jut forward, ringing the opening
+      row.push([rr * Math.cos(th), rr * Math.sin(th), u * AX + axial, th, rr, axial, fang])
     }
     sp.push(row)
   }
@@ -77,6 +84,7 @@ function buildWorm(R) {
   const aTheta = []
   const aAxial = []
   const aNormal = []
+  const aTooth = []
   for (let i = 0; i < ROWS; i++) {
     const u = i / T
     for (let j = 0; j < COLS; j++) {
@@ -110,6 +118,7 @@ function buildWorm(R) {
       aTheta.push(cur[3])
       aAxial.push(cur[5]) // axial offset only (gullet + fang); centerline comes from the path
       aNormal.push(nx, ny, nz)
+      aTooth.push(cur[6]) // tooth strength (0 body … 1 fang tip) for shading
     }
   }
   const index = []
@@ -119,7 +128,9 @@ function buildWorm(R) {
       const b = a + 1
       const c = a + (RING + 1)
       const d = c + 1
-      index.push(a, c, b, b, c, d)
+      // wound so the OUTER tube surface is front-facing (the shader paints
+      // front = sand body, back = dark gullet seen through the maw)
+      index.push(a, b, c, b, d, c)
     }
   }
   const g = new THREE.BufferGeometry()
@@ -129,6 +140,7 @@ function buildWorm(R) {
   g.setAttribute('aTheta', new THREE.Float32BufferAttribute(aTheta, 1))
   g.setAttribute('aAxial', new THREE.Float32BufferAttribute(aAxial, 1))
   g.setAttribute('aNormal', new THREE.Float32BufferAttribute(aNormal, 3))
+  g.setAttribute('aTooth', new THREE.Float32BufferAttribute(aTooth, 1))
   g.setIndex(index)
   return g
 }
@@ -139,6 +151,7 @@ const vert = /* glsl */ `
   attribute float aTheta;
   attribute float aAxial;
   attribute vec3 aNormal;
+  attribute float aTooth;
   uniform float uTime;
   uniform float uAmp;
   uniform float uR;
@@ -146,14 +159,17 @@ const vert = /* glsl */ `
   varying vec3 vNormal;
   varying float vU;
   varying float vTheta;
+  varying float vTooth;
 
   vec3 pathPos(float s) {
     float a = s;                          // azimuth → orbits the planet
     float l = 0.5 * sin(s * 1.4 + 0.3);   // latitude wander (wavy band)
     vec3 d = vec3(cos(l) * cos(a), sin(l), cos(l) * sin(a));
-    float hump = max(0.0, sin(s * 2.4));  // breach humps
-    float base = mix(0.5, 0.78, uAmp) * uR;
-    float br = pow(hump, 1.3) * 0.95 * uR * uAmp;
+    // gentler, lower-frequency breach: keeps the path curvature radius well above
+    // the tube radius so the bent tube never folds through itself (no clipping)
+    float hump = max(0.0, sin(s * 1.9));  // breach humps
+    float base = mix(0.55, 0.82, uAmp) * uR;
+    float br = pow(hump, 1.5) * 0.55 * uR * uAmp;
     return d * (base + br);
   }
 
@@ -183,6 +199,7 @@ const vert = /* glsl */ `
     vNormal = normalize(mat3(modelMatrix) * nrm);
     vU = aU;
     vTheta = aTheta;
+    vTooth = aTooth;
     gl_Position = projectionMatrix * viewMatrix * wp;
   }
 `
@@ -193,44 +210,70 @@ const frag = /* glsl */ `
   varying vec3 vNormal;
   varying float vU;
   varying float vTheta;
+  varying float vTooth;
   ${snoise}
+
   void main() {
+    bool front = gl_FrontFacing;
     vec3 N = normalize(vNormal);
-    if (!gl_FrontFacing) N = -N;
+    if (!front) N = -N;
 
-    // fbm bump relief — perturb the normal by the noise gradient
-    float h0 = fbm(vec3(vU * 34.0, vTheta * 3.5, 0.0));
-    float hu = fbm(vec3(vU * 34.0 + 0.6, vTheta * 3.5, 0.0));
-    float ht = fbm(vec3(vU * 34.0, vTheta * 3.5 + 0.6, 0.0));
-    vec3 tang = normalize(cross(N, vec3(0.0, 1.0, 0.0)) + 1e-4);
-    vec3 bitan = cross(N, tang);
-    N = normalize(N - (tang * (hu - h0) + bitan * (ht - h0)) * 2.2);
-
-    // ring-segment plates (match the geometric ridge frequency; fade at the smooth lip)
-    float seg = abs(fract(vU * 30.0) - 0.5);
-    float plate = smoothstep(0.5, 0.12, seg) * (1.0 - smoothstep(vU, 0.74, 0.86));
-
-    vec3 L = normalize(vec3(0.45, 0.8, 0.45)); // warm key from above-front
-    float diff = clamp(dot(N, L) * 0.5 + 0.5, 0.0, 1.0);
-    diff *= diff;
+    vec3 L = normalize(vec3(0.5, 0.78, 0.42));        // fixed key light, above-front
     vec3 V = normalize(cameraPosition - vWorldPos);
-    vec3 H = normalize(L + V);
-    float spec = pow(max(dot(N, H), 0.0), 32.0) * plate;
-    float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
 
-    if (!gl_FrontFacing) {
-      // inside the maw — dark wet gullet
-      gl_FragColor = vec4(mix(vec3(0.02, 0.0, 0.0), vec3(0.32, 0.06, 0.04), diff), 1.0);
+    // --- dark wet gullet (interior backfaces, seen down the throat) ---
+    if (!front) {
+      float depth = smoothstep(0.84, 1.0, vU);        // deeper in the throat → darker
+      float d = clamp(dot(N, L) * 0.5 + 0.5, 0.0, 1.0);
+      vec3 flesh = mix(vec3(0.22, 0.07, 0.06), vec3(0.015, 0.004, 0.006), depth);
+      gl_FragColor = vec4(flesh * (0.25 + 0.75 * d), 1.0);
       return;
     }
 
-    vec3 sand = vec3(0.6, 0.43, 0.25);
-    vec3 groove = vec3(0.09, 0.06, 0.04);
-    float tone = plate * (0.55 + 0.45 * h0);
-    vec3 base = mix(groove, sand, tone);
-    vec3 col = base * (0.22 + diff * 1.15);
-    col += vec3(1.0, 0.9, 0.7) * spec * 0.6;   // wet chitin glint
-    col += vec3(0.85, 0.5, 0.28) * fres * 0.35; // rim
+    // --- fine sand grain: gently perturb the normal (texture, not lumps) ---
+    float g0 = fbm(vec3(vU * 60.0, vTheta * 6.0, 0.0));
+    float gu = fbm(vec3(vU * 60.0 + 0.5, vTheta * 6.0, 0.0));
+    float gt = fbm(vec3(vU * 60.0, vTheta * 6.0 + 0.5, 0.0));
+    vec3 tang = normalize(cross(N, vec3(0.0, 1.0, 0.0)) + 1e-4);
+    vec3 bitan = cross(N, tang);
+    N = normalize(N - (tang * (gu - g0) + bitan * (gt - g0)) * 0.6);
+
+    // --- overlapping armor ring plates: broad plate, sharp dark groove (AO) ---
+    float ring = fract(vU * 26.0);
+    float plate = smoothstep(0.04, 0.16, ring) * smoothstep(0.98, 0.84, ring);
+    float bodyMask = 1.0 - smoothstep(vU, 0.78, 0.86); // no plate banding across the maw
+    float groove = mix(1.0, mix(0.42, 1.0, plate), bodyMask);
+
+    // --- matte, dusty lighting ---
+    float diff = clamp(dot(N, L) * 0.5 + 0.5, 0.0, 1.0); // soft half-lambert
+    float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
+
+    // sand palette — near-NEUTRAL grey-taupe on purpose: the scene's ACES tone
+    // mapping strongly re-saturates and warms mid-tones ("ACES orange"), so a warm
+    // tan input renders terracotta. These greyed values land on dusty Dune-sand.
+    vec3 sandLo = vec3(0.21, 0.18, 0.15);
+    vec3 sand   = vec3(0.60, 0.53, 0.43);
+    vec3 sandHi = vec3(0.82, 0.75, 0.63);
+    vec3 albedo = mix(sandLo, sand, 0.4 + 0.6 * g0);
+    albedo *= groove;
+
+    // crystalline teeth: pale cream — override the sand at the fangs
+    float toothMask = smoothstep(0.12, 0.6, vTooth);
+    albedo = mix(albedo, vec3(0.86, 0.84, 0.78), toothMask);
+
+    // light desaturation keeps it dusty (not candy) without going grey
+    float lum = dot(albedo, vec3(0.299, 0.587, 0.114));
+    albedo = mix(vec3(lum), albedo, 0.85);
+
+    // dusty ambient so the shadow side reads as sand, not black
+    vec3 amb = sandLo * 0.7 + vec3(0.06, 0.07, 0.09) * 0.5;
+    vec3 col = amb + albedo * diff * 0.95;
+    col += sandHi * fres * 0.10 * diff;                 // subtle dusty rim (cool, low)
+
+    // only the teeth get a sharp glint; the body stays matte sand
+    vec3 H = normalize(L + V);
+    col += pow(max(dot(N, H), 0.0), 40.0) * toothMask * 0.5;
+
     gl_FragColor = vec4(col, 1.0);
   }
 `

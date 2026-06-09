@@ -6,11 +6,15 @@ import { SiblingIndexDemo } from "./demos/SiblingIndexDemo.jsx";
 import { CarouselDemo } from "./demos/CarouselDemo.jsx";
 import { StickyDemo } from "./demos/StickyDemo.jsx";
 import { BottomSheetDemo } from "./demos/BottomSheetDemo.jsx";
+import { ReelDemo } from "./demos/ReelDemo.jsx";
 import { SwipeActionsDemo } from "./demos/SwipeActionsDemo.jsx";
 import { AnchorFlipDemo } from "./demos/AnchorFlipDemo.jsx";
 import { DependencyContrastDemo } from "./demos/DependencyContrastDemo.jsx";
 import { StreamDemo } from "./demos/StreamDemo.jsx";
 import { SelectDemo } from "./demos/SelectDemo.jsx";
+import { EmojiPickerDemo } from "./demos/EmojiPickerDemo.jsx";
+import { HtmlInCanvasDemo } from "./demos/HtmlInCanvasDemo.jsx";
+import { SiteFrameDemo } from "./demos/SiteFrameDemo.jsx";
 
 /**
  * ───────────────────────── PLANETS (CLUSTERS) ─────────────────────────────
@@ -38,6 +42,8 @@ const CLUSTERS = {
             colorDeep: "#5a2e05",
             atmosphere: "#ffd27a",
             freq: 3.0,
+            variant: "terran",
+            tilt: 0.18,
         },
         camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
     },
@@ -50,6 +56,8 @@ const CLUSTERS = {
             colorDeep: "#064e3b",
             atmosphere: "#a7f3d0",
             freq: 2.4,
+            variant: "ocean",
+            tilt: 0.35,
         },
         camera: { pos: [-68, 4, -22], target: [-86, -6, -28] },
     },
@@ -62,6 +70,9 @@ const CLUSTERS = {
             colorDeep: "#2e0a52",
             atmosphere: "#d9a8ff",
             freq: 2.0,
+            variant: "gas",
+            tilt: 0.45,
+            rings: { inner: 1.4, outer: 2.45 },
         },
         camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
     },
@@ -74,6 +85,8 @@ const CLUSTERS = {
             colorDeep: "#4c0519",
             atmosphere: "#fecdd3",
             freq: 2.8,
+            variant: "cratered",
+            tilt: 0.2,
         },
         camera: { pos: [36, 2, -86], target: [44, -8, -104] },
     },
@@ -86,6 +99,9 @@ const CLUSTERS = {
             colorDeep: "#06363f",
             atmosphere: "#8ff2ff",
             freq: 2.6,
+            variant: "ice",
+            tilt: 0.55,
+            moon: true,
         },
         camera: { pos: [101, 13, -26], target: [118, 5, -46] },
     },
@@ -98,6 +114,14 @@ const CLUSTERS = {
             colorDeep: "#4a044e",
             atmosphere: "#f5d0fe",
             freq: 2.2,
+            variant: "molten",
+            tilt: 0.3,
+            moon: {
+                color: "#ffcaa6",
+                colorDeep: "#5a2a10",
+                dist: 2.6,
+                radius: 0.3,
+            },
         },
         camera: { pos: [113, 20, 38], target: [132, 14, 44] },
     },
@@ -184,7 +208,10 @@ export const slides = withClusters([
     {
         id: "intro-syntax",
         kicker: "Hello",
-        body: "Syntax.fm",
+        // `intro: true` → no frosted card; the content floats centered in space
+        // below the logo constellation (see .card--intro). Here that's just the
+        // socials, enlarged — the Syntax logo overhead already names the show.
+        intro: true,
         socials: ["@stolinski", "@syntaxfm"],
         // Frames the Syntax constellation (at x -360) head-on, camera looking +z
         // (away from the galaxy band) so the backdrop is clean deep space. Sentry
@@ -194,15 +221,14 @@ export const slides = withClusters([
     {
         id: "intro-sentry",
         kicker: "Hello",
-        eyebrow: "And my work at",
+        // Same chromeless treatment: just the centered "Sentry.io" wordmark
+        // floating below the Sentry logo constellation.
+        intro: true,
         title: "Sentry.io",
         camera: { pos: [360, 408, 190], target: [360, 400, 520] },
     },
     {
         id: "system",
-        kicker: "Your neighborhood",
-        title: "Your Bubble",
-        body: "I'm here tmlo help you see the universe outside of your bubble.",
         // Frame the React-logo atom (ReactAtom, gated to this slide in Universe.jsx)
         // alone against deep space — one planet, no neighbors in sight. Looks +z so
         // the sun and the other planets stay behind the camera, out of frame.
@@ -217,7 +243,7 @@ export const slides = withClusters([
     {
         id: "native-html",
         cluster: "native-html",
-        title: "The modal you keep installing",
+        title: "A basic modal",
         support: {
             chrome: { since: "37" },
             safari: { since: "15.4" },
@@ -287,8 +313,33 @@ export const slides = withClusters([
 
     /* ───── PLANET 2 · Scroll-snap UI — sheets, swipes, carousels ───── */
     {
+        id: "reel",
+        cluster: "scroll-snap",
+        split: true,
+        title: "A feed that snaps, post by post",
+        support: {
+            chrome: { since: "69" },
+            safari: { since: "11" },
+            firefox: { since: "68" },
+        },
+        code: [
+            ".feed {",
+            "  overflow-y: auto;",
+            "  scroll-snap-type: y mandatory;",
+            "}",
+            "",
+            "/* each post is one snap target */",
+            ".post {",
+            "  height: 100%;",
+            "  scroll-snap-align: start;",
+            "}",
+        ].join("\n"),
+        demo: ReelDemo,
+    },
+    {
         id: "bottom-sheet",
         cluster: "scroll-snap",
+        split: true,
         title: "A sheet that snaps to size",
         support: {
             chrome: { since: "69" },
@@ -310,7 +361,8 @@ export const slides = withClusters([
     {
         id: "swipe-actions",
         cluster: "scroll-snap",
-        title: "A row you swipe to reveal",
+        split: true,
+        title: "A row swiper",
         support: {
             chrome: { since: "105" },
             safari: { since: "16" },
@@ -338,6 +390,7 @@ export const slides = withClusters([
     {
         id: "carousel",
         cluster: "scroll-snap",
+        split: true,
         title: "The carousel builds its own controls",
         support: {
             chrome: { since: "135" },
@@ -390,6 +443,7 @@ export const slides = withClusters([
     {
         id: "sticky-state",
         cluster: "scroll-driven",
+        split: true,
         title: "A header that knows it’s stuck",
         support: {
             chrome: { since: "133" },
@@ -458,6 +512,9 @@ export const slides = withClusters([
     {
         id: "anchor-flip",
         cluster: "overlays",
+        // Side-by-side: the code sits beside the live (draggable) demo so there's
+        // room to show the menu flipping as you drag.
+        split: true,
         title: "A menu that flips to stay on screen",
         support: {
             chrome: { since: "125" },
@@ -481,6 +538,8 @@ export const slides = withClusters([
     {
         id: "image-placeholder",
         cluster: "overlays",
+        // Centered stage so the image is the centerpiece (not parked bottom-left).
+        center: true,
         title: "Image slide",
         // PLACEHOLDER — drop a real image in `public/` and set
         // `image: { src: '/your-image.png', alt: '…', caption: '…' }`.
@@ -492,23 +551,25 @@ export const slides = withClusters([
     {
         id: "select-base",
         cluster: "overlays",
+        split: true,
         // Part 1 — the OPT-IN. A real native <select> (keyboard, typeahead, form
         // submission, a11y all free) becomes fully styleable with one line:
         // `appearance: base-select` on the control AND its ::picker popover. The
         // custom trigger is a <button> whose <selectedcontent> mirrors the chosen
         // option. Don't name the library on the slide — say it out loud.
-        title: "The dropdown you keep installing",
+        title: "Select lists no longer suck",
         support: {
             chrome: { since: "135" },
-            safari: false,
+            safari: { flag: true, label: "Technology Preview" },
             firefox: false,
         },
         code: [
             "<select>",
+            "  /* <selectedcontent /> display the contents of its currently selected */",
             "  <button><selectedcontent /></button>",
             "",
-            "  <option value=\"maya\">",
-            "    <img src=\"avatar.png\">",
+            '  <option value="maya">',
+            '    <img src="avatar.png">',
             "    <b>Maya R.</b> <small>Frontend</small>",
             "  </option>",
             "</select>",
@@ -524,14 +585,14 @@ export const slides = withClusters([
     {
         id: "select-style",
         cluster: "overlays",
+        split: true,
         // Part 2 — the PAYOFF. Now the option list is just a box of flex rows you
         // style like anything else (the exact part that used to force a JS
         // combobox), with native state in pure CSS — and because the picker is a
         // real popover, it animates open via @starting-style.
-        title: "Now style the list like any element",
         support: {
             chrome: { since: "135" },
-            safari: false,
+            safari: { flag: true, label: "Technology Preview" },
             firefox: false,
         },
         code: [
@@ -548,6 +609,42 @@ export const slides = withClusters([
             "}",
         ].join("\n"),
         demo: SelectDemo,
+    },
+    {
+        id: "select-emoji",
+        cluster: "overlays",
+        // Side-by-side: code beside the live reaction picker, to show more.
+        split: true,
+        // Una Kravets' emoji reaction picker, used verbatim (see EmojiPickerDemo).
+        // The shock: this Facebook-style reaction bar is the SAME native <select>
+        // — the only trick is laying its picker out as a horizontal row of round
+        // emoji. The code panel shows that unique bit (not the base-select opt-in
+        // from the prior slides, nor her @supports fallback). Credit Una on the
+        // demo; don't name a library on the slide.
+        eyebrow: "Still one native <select>",
+        title: "An emoji reaction picker",
+        support: {
+            chrome: { since: "135" },
+            safari: { flag: true, label: "Technology Preview" },
+            firefox: false,
+        },
+        // Her verbatim property lines — the row-picker is what makes this demo
+        // unique. The demo itself renders the full pen. codepen.io/una/pen/RNaWYNK
+        code: [
+            "/* the picker is a horizontal row of round */",
+            "/* emoji — a reaction bar, not a dropdown */",
+            "::picker(select) {",
+            "  flex-direction: row;",
+            "}",
+            "",
+            "option {",
+            "  font-size: 1.8rem;",
+            "  border-radius: 50%;",
+            "  padding: 0.7rem;",
+            "  &::checkmark { display: none }",
+            "}",
+        ].join("\n"),
+        demo: EmojiPickerDemo,
     },
 
     /* ───── PLANET 6 · Bleeding edge — newest of the new ───── */
@@ -566,6 +663,48 @@ export const slides = withClusters([
         // compat fact (Chrome 148, flag) lives inside the demo instead.
         center: true,
         demo: StreamDemo,
+    },
+    {
+        id: "html-canvas",
+        cluster: "edge",
+        // The finale's SETUP. For years, getting DOM into a canvas/WebGL meant a
+        // screenshot (html2canvas) or a separate CSS3D layer that can't composite
+        // with the scene. drawElementImage() rasterizes a LIVE, interactive element
+        // straight into a 2D context — real fonts, inputs, CSS. The demo lets you
+        // type on the left and watch the canvas (right) update. COPY IS PLACEHOLDER.
+        title: "Draw live HTML into a canvas",
+        // Wide side-by-side demo (like `stream`): the live component, its <canvas>
+        // mirror, and the genuine drawElementImage source all sit inside the demo.
+        // No `support` coins — the wide card would collide with the right-margin
+        // column, so the compat fact (Chrome 148, flag) lives inside the demo.
+        center: true,
+        demo: HtmlInCanvasDemo,
+    },
+    {
+        id: "html-canvas-reveal",
+        cluster: "edge",
+        // THE STAR — the talk's own card, now a live texture on a 3D panel that
+        // dissolves into a galaxy (scene HtmlPanel, gated by this id in Universe).
+        // It blooms and the bleeding-edge planet eclipses it. NO overlay card —
+        // `bare` renders just the universe; Scott narrates why it's cool. Uses the
+        // real drawElementImage on stage (flag on), a hand-drawn fallback otherwise.
+        bare: true,
+        // Frame the orbiting panel against the planet so the eclipse reads; looks
+        // roughly +X so the far arc of the orbit tucks behind the planet.
+        camera: { pos: [112, 16, 51], target: [131, 13, 45], smoothTime: 1.4 },
+    },
+    {
+        id: "graffiti",
+        // The credibility payoff capping the demo tour: Graffiti — Scott's
+        // platform-only (HTML/CSS) component library — embedded LIVE and full
+        // screen. `bare` drops the card so the faux-browser frame fills the stage;
+        // its desktop width forces the site's desktop layout (no mobile view).
+        // Parked at the bleeding-edge planet (same vista as html-canvas-reveal, no
+        // camera move) — ai-intro then does the pull-back to the system overview.
+        bare: true,
+        demo: SiteFrameDemo,
+        accent: "#34d399",
+        camera: { pos: [112, 16, 51], target: [131, 13, 45], smoothTime: 1.2 },
     },
 
     /* ───────────────────────── CLOSING MOVEMENT: AGENTS ─────────────────────────
@@ -638,9 +777,8 @@ export const slides = withClusters([
         camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
     },
     {
+        // TODO: make this slide a generated qr code with no card.
         id: "ai-close",
-        kicker: "Agents",
-        eyebrow: "What you ship is what it learns next",
         title: "This component could have been a div",
         body: "Now you’re the one who decides it is. Every component you write becomes the next model’s training data — ship the platform and you raise the floor for everyone.",
         camera: { pos: [70, 95, 250], target: [0, 0, 0] },
@@ -651,10 +789,7 @@ export const slides = withClusters([
      *  the sign-off (socials) lands on it. */
     {
         id: "galaxy",
-        kicker: "The web",
-        eyebrow: "Now pull all the way back",
-        title: "And it’s one speck in a galaxy",
-        body: "The whole web platform spirals out around you. We spend careers on a single world — and yolo-install the rest.",
+        title: "Thank you",
         socials: ["@stolinski", "@syntaxfm"],
         camera: {
             pos: [8000, 52000, 15000],

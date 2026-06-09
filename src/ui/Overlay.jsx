@@ -39,6 +39,13 @@ export function Overlay() {
     // A slide can also opt into the centered stage without code (e.g. a wide
     // centerpiece demo) via `center: true`.
     const centered = codeHero || Boolean(slide.center);
+    // `split: true` lays the code BESIDE the live demo (two columns) instead of
+    // stacking demo-under-code — for slides where the demo wants more room.
+    const split = Boolean(slide.split && slide.code && Demo);
+    // `bare: true` renders NO frosted card — drop it on any slide to strip the
+    // chrome. If the slide has a `demo`, it plays full-bleed on the stage (e.g. a
+    // big embedded site); with no demo it's just the universe (you narrate over it).
+    const bare = Boolean(slide.bare);
     const isStart = slide.id === "start";
 
     // Fit the fixed 1920×1080 DOM stage to any viewport so the deck looks
@@ -77,14 +84,27 @@ export function Overlay() {
           there's no fly-in, so skip it and show the start slide right away. */}
             <div className="blackout" data-show={isStart && !FLAT} />
             <div
-                className={`overlay ${centered ? "overlay--center" : ""}`}
+                className={`overlay ${centered ? "overlay--center" : ""} ${
+                    slide.intro ? "overlay--intro" : ""
+                }`}
                 style={{ "--accent": accentFor(slide) }}
             >
+                {bare ? (
+                    // No card: a `demo` (if any) plays full-bleed; otherwise just
+                    // the universe shows through.
+                    Demo && (
+                        <div className="bare-stage" key={slide.id}>
+                            <Demo />
+                        </div>
+                    )
+                ) : (
                 <div
                     key={slide.id}
                     className={`card ${slide.id === "title" ? "card--title" : ""} ${
                         codeHero ? "card--code" : ""
-                    } ${slide.center && !codeHero ? "card--wide" : ""}`}
+                    } ${slide.center && !codeHero ? "card--wide" : ""} ${
+                        split ? "card--split" : ""
+                    } ${slide.intro ? "card--intro" : ""}`}
                 >
                     {/* {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}*/}
                     <h1>{slide.title}</h1>
@@ -120,15 +140,29 @@ export function Overlay() {
                             )}
                         </figure>
                     )}
-                    {slide.code && <CodeBlock>{slide.code}</CodeBlock>}
-                    {Demo && (
-                        <div className="demo">
-                            <Demo />
+                    {split ? (
+                        <div className="split">
+                            <CodeBlock>{slide.code}</CodeBlock>
+                            <div className="demo">
+                                <Demo />
+                            </div>
                         </div>
+                    ) : (
+                        <>
+                            {slide.code && (
+                                <CodeBlock>{slide.code}</CodeBlock>
+                            )}
+                            {Demo && (
+                                <div className="demo">
+                                    <Demo />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
+                )}
 
-                <footer className="hud">
+                <footer className="hud" data-bare={bare || undefined}>
                     <span>
                         {index + 1} / {count}
                     </span>
