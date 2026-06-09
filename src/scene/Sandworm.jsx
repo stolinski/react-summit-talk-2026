@@ -18,17 +18,26 @@ import { snoise } from '../shaders/snoise.js'
  * rises out as `show` ramps (uAmp grows the breach + radius from inside).
  */
 const T = 230 // length samples
-const RING = 24 // cross-section resolution
-const RIDGE_FREQ = 34 // geometric ring segments
+const RING = 96 // cross-section resolution (high → smooth tube + cleanly-sampled teeth)
+const RIDGE_FREQ = 30 // geometric ring segments
+const TEETH = 32 // fangs ringing the maw (well below RING so they never alias)
 
 function buildWorm(R) {
+  // Radial profile along the body (u: 0 = tail tip, 1 = mouth). The body holds an
+  // even thickness, swells smoothly into a single rounded lip, then the throat
+  // folds back toward a dark point — no thin "neck" and no trumpet flare, so the
+  // maw reads as an open round mouth rather than an odd hourglass-and-bell.
   const profile = (u) => {
     let r
-    if (u < 0.1) r = THREE.MathUtils.lerp(0.02, 0.22, u / 0.1)
-    else if (u < 0.68) r = 0.22
-    else if (u < 0.83) r = THREE.MathUtils.lerp(0.22, 0.14, (u - 0.68) / 0.15) // neck pinch
-    else r = THREE.MathUtils.lerp(0.14, 0.42, Math.pow((u - 0.83) / 0.17, 0.7)) // maw bell
-    r += 0.03 * Math.sin(u * RIDGE_FREQ * Math.PI * 2) // geometric ring ridges
+    if (u < 0.08) r = THREE.MathUtils.lerp(0.015, 0.2, u / 0.08) // tail tip
+    else if (u < 0.66) r = 0.2 // body
+    else if (u < 0.86)
+      r = THREE.MathUtils.lerp(0.2, 0.34, THREE.MathUtils.smootherstep(u, 0.66, 0.86)) // swell into the lip
+    else r = THREE.MathUtils.lerp(0.34, 0.04, THREE.MathUtils.smootherstep(u, 0.86, 1.0)) // throat folds in
+    // segment ridges live on the body only — faded out before the lip so the rim stays clean
+    const ridge =
+      THREE.MathUtils.smoothstep(u, 0.06, 0.12) * (1 - THREE.MathUtils.smoothstep(u, 0.58, 0.7))
+    r += 0.025 * ridge * Math.sin(u * RIDGE_FREQ * Math.PI * 2)
     return r * R
   }
 
@@ -36,18 +45,24 @@ function buildWorm(R) {
   const aU = []
   const aOff = []
   const aTheta = []
+  const aAxial = []
   for (let i = 0; i <= T; i++) {
     const u = i / T
     const baseR = profile(u)
-    const maw = THREE.MathUtils.smoothstep(u, 0.83, 1.0)
+    // a dense crown of fangs rings the rim; the throat recedes into a dark gullet
+    const teethBand =
+      THREE.MathUtils.smoothstep(u, 0.8, 0.88) * (1 - THREE.MathUtils.smoothstep(u, 0.9, 0.965))
+    const gullet = THREE.MathUtils.smoothstep(u, 0.86, 1.0) * -0.8 * R
     for (let j = 0; j <= RING; j++) {
       const th = (j / RING) * Math.PI * 2
-      const teeth = Math.pow(Math.abs(Math.sin(th * (RING / 2))), 6) * 0.16 * R * maw
-      const rr = baseR + teeth
+      const fang = Math.pow(Math.abs(Math.sin(th * (TEETH / 2))), 8) * teethBand
+      const rr = baseR + fang * 0.03 * R // fangs sit just proud of the lip…
+      const axial = gullet + fang * 0.18 * R // …and jut forward, ringing the opening
       position.push(0, 0, u) // placeholder; real position computed in the shader
       aU.push(u)
       aOff.push(rr * Math.cos(th), rr * Math.sin(th))
       aTheta.push(th)
+      aAxial.push(axial)
     }
   }
   const index = []
@@ -65,6 +80,7 @@ function buildWorm(R) {
   g.setAttribute('aU', new THREE.Float32BufferAttribute(aU, 1))
   g.setAttribute('aOff', new THREE.Float32BufferAttribute(aOff, 2))
   g.setAttribute('aTheta', new THREE.Float32BufferAttribute(aTheta, 1))
+  g.setAttribute('aAxial', new THREE.Float32BufferAttribute(aAxial, 1))
   g.setIndex(index)
   return g
 }
@@ -73,6 +89,7 @@ const vert = /* glsl */ `
   attribute float aU;
   attribute vec2 aOff;
   attribute float aTheta;
+  attribute float aAxial;
   uniform float uTime;
   uniform float uAmp;
   uniform float uR;
@@ -103,7 +120,7 @@ const vert = /* glsl */ `
     vec3 side = normalize(cross(T, radial));
     vec3 up   = normalize(cross(side, T));
 
-    vec3 local = P + aOff.x * up + aOff.y * side;
+    vec3 local = P + T * aAxial + aOff.x * up + aOff.y * side;
     vec4 wp = modelMatrix * vec4(local, 1.0);
     vWorldPos = wp.xyz;
     vNormal = normalize(mat3(modelMatrix) * (aOff.x * up + aOff.y * side));
@@ -132,9 +149,9 @@ const frag = /* glsl */ `
     vec3 bitan = cross(N, tang);
     N = normalize(N - (tang * (hu - h0) + bitan * (ht - h0)) * 2.2);
 
-    // ring-segment plates (match the geometric ridge frequency)
-    float seg = abs(fract(vU * 34.0) - 0.5);
-    float plate = smoothstep(0.5, 0.12, seg);
+    // ring-segment plates (match the geometric ridge frequency; fade at the smooth lip)
+    float seg = abs(fract(vU * 30.0) - 0.5);
+    float plate = smoothstep(0.5, 0.12, seg) * (1.0 - smoothstep(vU, 0.74, 0.86));
 
     vec3 L = normalize(vec3(0.45, 0.8, 0.45)); // warm key from above-front
     float diff = clamp(dot(N, L) * 0.5 + 0.5, 0.0, 1.0);

@@ -91,9 +91,9 @@ const discFrag = /* glsl */ `
     col += vec3(1.0) * spec * h * 0.9;
 
     col += uColor * uLit * (h * 2.5 + 0.18);     // brighter glow when supported
-    col *= mix(0.26, 1.0, uLit);                 // much darker when unsupported
+    col *= mix(0.09, 1.0, uLit);                 // much darker when unsupported
     float g = dot(col, vec3(0.299, 0.587, 0.114));
-    col = mix(vec3(g), col, 0.4 + 0.6 * uLit);   // off reads desaturated / dead
+    col = mix(vec3(g), col, 0.22 + 0.78 * uLit); // off reads desaturated / dead
 
     gl_FragColor = vec4(col, disc * uShown);
   }

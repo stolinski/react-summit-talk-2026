@@ -149,7 +149,8 @@ planets, code samples, demos. Start here.
   in `public/logos/` (`chrome/safari/firefox.svg`, via
   `cdn.simpleicons.org/<slug>/white`) — swap in official/full-color art by
   replacing those files. Easy dials: brand tints, emboss depth (`* 9.5` in
-  `discFrag`), off-darkness (`0.26`) and off-desaturation (`0.4 + 0.6`). Tooltip
+  `discFrag`), off-darkness (`0.09` — lower = darker dead coins) and
+  off-desaturation (`0.22 + 0.78`). Tooltip
   wording is scaffold; the version/flag data on each slide is factual placeholder
   for Scott to verify.
 - `Sun.jsx` — core sphere + a **two-layer corona** (inner + wide faint outer) and

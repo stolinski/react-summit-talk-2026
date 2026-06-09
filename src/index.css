@@ -727,6 +727,141 @@ canvas {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Swipe-to-reveal row (Graffiti's `.swipe`): the iOS swipe-to-delete gesture
+   with no gesture library. Each row is a horizontal scroll-snap container laid
+   out `auto 1fr auto`; the MIDDLE cell is `100cqw` (exactly the row's width), so
+   the two action buttons sit just offscreen. Native scroll IS the swipe;
+   `scroll-snap-align` springs it back to center or holds an action open. */
+.swipe-inbox {
+  width: 380px;
+  border-radius: 30px;
+  overflow: hidden;
+  background: #0a0f1c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 6px #05070d, 0 26px 64px rgba(0, 0, 0, 0.55);
+}
+.swipe-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 20px 22px 14px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #e8eefc;
+}
+.swipe-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.swipe-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* one row = the whole technique. */
+.swipe {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  scrollbar-width: none;
+}
+.swipe::-webkit-scrollbar {
+  display: none;
+}
+
+/* the visible row: middle cell, full container width → actions wait offscreen. */
+.swipe-row {
+  inline-size: 100cqw;
+  scroll-snap-align: center;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  background: #0d1322;
+  border: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.swipe-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-weight: 800;
+  color: #05070d;
+  background: linear-gradient(
+    155deg,
+    hsl(var(--h) 80% 64%),
+    hsl(calc(var(--h) + 28) 72% 50%)
+  );
+}
+.swipe-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.swipe-text b {
+  font-size: 1.05rem;
+  color: #e8eefc;
+}
+.swipe-star {
+  color: #f6c34a;
+  font-style: normal;
+  margin-right: 6px;
+}
+.swipe-text span {
+  font-size: 0.92rem;
+  color: #9fb0cf;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.swipe-time {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  font-size: 0.8rem;
+  color: #6b7c99;
+}
+
+/* the offscreen actions: a swipe snaps one fully into view (snap-align start/end). */
+.swipe-act {
+  inline-size: 96px;
+  border: none;
+  border-radius: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5) inset;
+}
+.swipe-act.pin {
+  scroll-snap-align: start;
+  background: #d9852b;
+}
+.swipe-act.del {
+  scroll-snap-align: end;
+  background: #e0445b;
+}
+.swipe-empty {
+  padding: 42px;
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 /* Anchor positioning (the Floating UI job): the menu is tied to the button with
    `position-anchor` and flips sides via `position-try-fallbacks` when it would
    run off the stage. The drag is JS; the positioning is 100% CSS. */
@@ -890,29 +1025,29 @@ canvas {
    outside the scaled stage — sizes in real px). Tinted to the hovered browser
    via --tip. Sits to the left of the coin (coins hug the right margin). */
 .support-tip {
-  transform: translateX(-118%);
+  transform: translateX(-114%);
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 13px;
-  border-radius: 11px;
+  gap: 5px;
+  padding: 14px 22px;
+  border-radius: 16px;
   white-space: nowrap;
   background: rgba(9, 12, 20, 0.92);
   border: 1px solid color-mix(in srgb, var(--tip, #38bdf8) 55%, transparent);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55),
-    0 0 22px -6px color-mix(in srgb, var(--tip, #38bdf8) 60%, transparent);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55),
+    0 0 28px -6px color-mix(in srgb, var(--tip, #38bdf8) 60%, transparent);
   backdrop-filter: blur(6px);
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   color: #eef3fb;
 }
 .support-tip strong {
-  font-size: 13px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 .support-tip span {
-  font-size: 12px;
-  color: #9fb0c8;
+  font-size: 22px;
+  color: #b7c6dc;
 }
 
 .hud {

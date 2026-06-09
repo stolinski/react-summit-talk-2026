@@ -6,6 +6,7 @@ import { SiblingIndexDemo } from './demos/SiblingIndexDemo.jsx'
 import { CarouselDemo } from './demos/CarouselDemo.jsx'
 import { StickyDemo } from './demos/StickyDemo.jsx'
 import { BottomSheetDemo } from './demos/BottomSheetDemo.jsx'
+import { SwipeActionsDemo } from './demos/SwipeActionsDemo.jsx'
 import { AnchorFlipDemo } from './demos/AnchorFlipDemo.jsx'
 import { DependencyContrastDemo } from './demos/DependencyContrastDemo.jsx'
 
@@ -322,6 +323,37 @@ export const slides = [
     demo: BottomSheetDemo,
   },
   {
+    id: 'swipe-actions',
+    kicker: 'CSS',
+    title: 'A row you swipe to reveal',
+    support: {
+      chrome: { since: '105' },
+      safari: { since: '16' },
+      firefox: { since: '110' },
+    },
+    // Parked at the CSS planet: same waypoint as the other CSS demos, card swaps.
+    camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+    code: [
+      '.swipe {',
+      '  display: grid;',
+      '  grid-template-columns: auto 1fr auto;',
+      '  container-type: inline-size;',
+      '  overflow-x: auto;',
+      '  scroll-snap-type: x mandatory;',
+      '}',
+      '',
+      '.row {',
+      '  inline-size: 100cqw;        /* = the full row */',
+      '  scroll-snap-align: center;  /* springs back */',
+      '}',
+      '',
+      '/* a swipe snaps an action fully open */',
+      '.left  { scroll-snap-align: start }',
+      '.right { scroll-snap-align: end }',
+    ].join('\n'),
+    demo: SwipeActionsDemo,
+  },
+  {
     id: 'anchor-flip',
     kicker: 'Web APIs',
     title: 'A menu that flips to stay on screen',
@@ -391,8 +423,9 @@ export const slides = [
     title: 'The reason you installed it is gone',
     worm: true,
     body: 'You pulled in the library because writing it yourself was the expensive part. It isn’t anymore. The dependency stopped being a trade and became risk you kept for nothing.',
-    // Fly in close to the React planet so the worm breaching it is the focus.
-    camera: { pos: [43, 7, 33], target: [27, -4, 12], smoothTime: 1.6 },
+    // View from the SUN side (sun behind the camera, out of frame) so we see the
+    // lit face of the planet and the worm breaching it — no distracting sun.
+    camera: { pos: [26, 3, 18], target: [33, 1, 21], smoothTime: 1.6 },
   },
   {
     id: 'ai-other-edge',
@@ -402,7 +435,7 @@ export const slides = [
     worm: true,
     body: 'Left to its average, an agent reaches for the registry — and will confidently import a package that doesn’t exist, a name attackers now register to catch the guess. The same tool that deletes dependencies will add a hostile one.',
     // Parked at the close React-planet view (same as ai-excuse).
-    camera: { pos: [43, 7, 33], target: [27, -4, 12] },
+    camera: { pos: [26, 3, 18], target: [33, 1, 21] },
   },
   {
     id: 'ai-defaults',
