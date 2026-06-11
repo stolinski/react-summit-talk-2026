@@ -7,12 +7,18 @@ const SLIDES = [1, 2, 3, 4, 5]
 
 export function CarouselDemo() {
   return (
-    <div className="carousel">
-      {SLIDES.map((n) => (
-        <div className="carousel-slide" style={{ '--i': n }} key={n}>
-          {n}
-        </div>
-      ))}
+    // The generated ::scroll-button()s anchor to the scroller's containing block,
+    // not the scroller itself — so wrap the carousel in a tight, positioned frame
+    // to keep the arrows ON the carousel (otherwise they drift onto the slide's
+    // wider grid column, the left one landing under the code).
+    <div className="carousel-frame">
+      <div className="carousel">
+        {SLIDES.map((n) => (
+          <div className="carousel-slide" style={{ '--i': n }} key={n}>
+            {n}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

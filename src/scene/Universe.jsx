@@ -20,7 +20,14 @@ import { useStore } from '../state/useStore.js'
 function IntroConstellations() {
   const index = useStore((s) => s.index)
   const id = slides[index]?.id
-  const show = id === 'intro-syntax' || id === 'intro-sentry'
+  // The QR constellation returns for the ai-close beat (Syntax/Sentry are far
+  // off-frame from its camera, so showing the whole group there is harmless).
+  const show =
+    id === 'intro-syntax' ||
+    id === 'intro-sentry' ||
+    id === 'intro-qr' ||
+    id === 'ai-close' ||
+    id === 'outro-syntax'
   return (
     <group>
       <LogoConstellation
@@ -41,6 +48,17 @@ function IntroConstellations() {
         density={0.7}
         show={show}
       />
+      {/* QR code as a star field — white stars, dense enough that the modules
+          stay scannable. Continues the leftward→rightward intro pan. */}
+      <LogoConstellation
+        src="/logos/qr.svg"
+        fallbackText="QR"
+        color="#ffffff"
+        position={[1080, 420, 520]}
+        size={180}
+        density={0.85}
+        show={show}
+      />
     </group>
   )
 }
@@ -49,7 +67,13 @@ export function Universe() {
   const index = useStore((s) => s.index)
   const wormShow = Boolean(slides[index]?.worm)
   const atomShow = slides[index]?.id === 'system'
-  const htmlPanelShow = slides[index]?.id === 'html-canvas-reveal'
+  // Mount the panel only around its slide: while mounted it keeps an offscreen
+  // DOM host + repaintable canvas alive (real cost with the drawElementImage
+  // flag on), so the rest of the deck shouldn't carry it. ±1 slide keeps the
+  // fade-out playing as you step away instead of popping.
+  const htmlPanelIndex = slides.findIndex((s) => s.id === 'html-canvas-reveal')
+  const htmlPanelNear = Math.abs(index - htmlPanelIndex) <= 1
+  const htmlPanelShow = index === htmlPanelIndex
   return (
     <>
       <ambientLight intensity={0.15} />
@@ -80,7 +104,9 @@ export function Universe() {
       {/* html-in-canvas FINALE: the talk's own card as a live CanvasTexture on a
           3D panel that the bleeding-edge planet eclipses (the world outside React,
           made literal). Shown on the `html-canvas-reveal` slide. */}
-      <HtmlPanel position={[132, 14, 44]} accent="#f5d0fe" show={htmlPanelShow} />
+      {htmlPanelNear && (
+        <HtmlPanel position={[132, 14, 44]} accent="#f5d0fe" show={htmlPanelShow} />
+      )}
 
       {/* 3D browser-support readout (per-slide `support` field). */}
       <BrowserSupport />

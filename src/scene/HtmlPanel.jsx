@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { DissolveCard } from './DissolveCard.jsx'
 import {
   HTML_IN_CANVAS_SUPPORTED,
   paintElement,
@@ -9,27 +8,24 @@ import {
 } from '../lib/htmlInCanvas.js'
 
 /**
- * THE html-in-canvas FINALE — the talk's own card, pulled INTO the universe and
- * then handed to the GPU.
+ * THE html-in-canvas FINALE — the talk's own card, pulled INTO the universe.
  *
  * `ctx.drawElementImage()` rasterizes a live DOM card into a <canvas>; that
- * canvas is a THREE.CanvasTexture. But drawing DOM that looks like the DOM isn't
- * the point — the point is what's possible ONCE it's a texture. So the card
- * forms as a crisp panel, then every pixel becomes a star that swirls out into
- * the galaxy and reforms (DissolveCard), orbiting the bleeding-edge planet that
- * eclipses it, blooming via Effects. The overlay this whole talk floats over
- * could do none of this.
+ * canvas is a THREE.CanvasTexture on a plane floating beside the bleeding-edge
+ * planet. Deliberately NO effects — the shock is the plain fact: that's real,
+ * live DOM (blinking caret and all) sitting inside the WebGL universe. (The
+ * star-scatter party trick lives on the flat `html-canvas` slide; an earlier
+ * version repeated it here and it upstaged the point.)
  *
  * Real API ships in Chrome 148 behind a flag (see htmlInCanvas.js); with it off
- * we hand-draw a faithful copy of the card, so the reveal is identical bar the
- * rasterizer. Calm motion per the house rule — smooth transforms only.
+ * we hand-draw a faithful copy of the card, so the slide is identical bar the
+ * rasterizer. Calm motion per the house rule — a slow drift, nothing more.
  */
 
 const TEX_W = 1024
 const TEX_H = 640
 const CARD_W = 9.2
 const CARD_H = CARD_W * (TEX_H / TEX_W)
-const LOOP = 15 // seconds: forms, holds readable, scatters into stars, repeats
 
 function buildSourceCard(accent) {
   const card = document.createElement('div')
@@ -63,39 +59,20 @@ function buildSourceCard(accent) {
   return card
 }
 
-function makeGlowTexture(accent) {
-  const c = document.createElement('canvas')
-  c.width = c.height = 256
-  const ctx = c.getContext('2d')
-  const g = ctx.createRadialGradient(128, 128, 10, 128, 128, 128)
-  const col = new THREE.Color(accent)
-  const rgb = `${(col.r * 255) | 0}, ${(col.g * 255) | 0}, ${(col.b * 255) | 0}`
-  g.addColorStop(0, `rgba(${rgb}, 0.5)`)
-  g.addColorStop(0.4, `rgba(${rgb}, 0.2)`)
-  g.addColorStop(1, `rgba(${rgb}, 0)`)
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, 256, 256)
-  const tex = new THREE.CanvasTexture(c)
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
 export function HtmlPanel({
   position = [132, 14, 44], // orbit center = the bleeding-edge planet
   orbitRadius = 5.4,
   accent = '#f5d0fe',
   show = false,
 }) {
-  const root = useRef() // orbits + billboards toward the camera
+  const root = useRef() // floats + billboards toward the camera
   const tilt = useRef() // gentle 3D rock so it never reads as a flat sticker
-  const glowMat = useRef()
+  const mat = useRef()
   const amp = useRef(0)
   const time = useRef(0)
-  const dissolveRef = useRef(0)
-  const opacityRef = useRef(0)
   const { camera, gl } = useThree()
 
-  const { canvas, ctx, sourceCard, texture, glowTexture } = useMemo(() => {
+  const { canvas, ctx, sourceCard, texture } = useMemo(() => {
     const canvas = document.createElement('canvas')
     canvas.width = TEX_W
     canvas.height = TEX_H
@@ -130,15 +107,13 @@ export function HtmlPanel({
     texture.magFilter = THREE.LinearFilter
     texture.generateMipmaps = false
     texture.anisotropy = gl.capabilities.getMaxAnisotropy?.() ?? 1
-    const glowTexture = makeGlowTexture(accent)
-    return { canvas, ctx, sourceCard, texture, glowTexture }
+    return { canvas, ctx, sourceCard, texture }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     return () => {
       texture.dispose()
-      glowTexture.dispose()
       const host = canvas.parentElement
       if (host?.parentElement) host.parentElement.removeChild(host)
     }
@@ -152,7 +127,6 @@ export function HtmlPanel({
     if (!g) return
     amp.current = THREE.MathUtils.damp(amp.current, show ? 1 : 0, 2.4, dt)
     const a = amp.current
-    opacityRef.current = a
     g.visible = a > 0.01
     if (!g.visible) return
 
@@ -165,56 +139,38 @@ export function HtmlPanel({
     }
     texture.needsUpdate = true
 
-    // Breathe: form from stars → hold readable → scatter into the galaxy → repeat.
-    const u = (t % LOOP) / LOOP
-    let d
-    if (u < 0.13) d = 1 - THREE.MathUtils.smootherstep(u / 0.13, 0, 1)
-    else if (u < 0.6) d = 0
-    else if (u < 0.82) d = THREE.MathUtils.smootherstep((u - 0.6) / 0.22, 0, 1)
-    else d = 1
-    dissolveRef.current = d
-
-    // Orbit the planet in world X–Z (camera looks roughly +X, so the +X arc tucks
-    // behind the planet → it eclipses the card), with a small Y bob.
-    const ang = t * 0.34
+    // Park on the camera side of the planet with a slow drift — readable the
+    // whole time, never eclipsed.
+    const front = Math.atan2(
+      camera.position.z - center.z,
+      camera.position.x - center.x
+    )
+    const ang = front + 0.1 * Math.sin(t * 0.2)
     g.position.set(
       center.x + Math.cos(ang) * orbitRadius,
-      center.y + Math.sin(ang) * orbitRadius * 0.34,
+      center.y + 0.3 * Math.sin(t * 0.27),
       center.z + Math.sin(ang) * orbitRadius
     )
-    g.lookAt(camera.position) // billboard so the formed card stays readable
+    g.lookAt(camera.position) // billboard so the card stays readable
     if (tilt.current) {
-      tilt.current.rotation.y = 0.3 * Math.sin(t * 0.5)
-      tilt.current.rotation.x = 0.15 * Math.sin(t * 0.62)
+      tilt.current.rotation.y = 0.18 * Math.sin(t * 0.5)
+      tilt.current.rotation.x = 0.09 * Math.sin(t * 0.62)
       tilt.current.scale.setScalar(0.82 + 0.18 * a)
     }
-    if (glowMat.current) glowMat.current.opacity = a * (1 - 0.7 * d)
+    if (mat.current) mat.current.opacity = a
   })
 
   return (
     <group ref={root} visible={false}>
       <group ref={tilt}>
-        <DissolveCard
-          texture={texture}
-          width={CARD_W}
-          height={CARD_H}
-          cols={184}
-          rows={115}
-          spread={7}
-          size={2.2}
-          intensity={0.7}
-          dissolveRef={dissolveRef}
-          opacityRef={opacityRef}
-        />
-        {/* soft accent halo behind it → bloom + "glowing object" read */}
-        <mesh position={[0, 0, -0.06]} renderOrder={-1}>
-          <planeGeometry args={[CARD_W * 1.5, CARD_H * 1.7]} />
+        <mesh>
+          <planeGeometry args={[CARD_W, CARD_H]} />
           <meshBasicMaterial
-            ref={glowMat}
-            map={glowTexture}
+            ref={mat}
+            map={texture}
             transparent
             toneMapped={false}
-            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
             depthWrite={false}
           />
         </mesh>

@@ -33,10 +33,15 @@ const ENGINES = [
   { key: 'firefox', name: 'Firefox', color: '#ff8a4c', src: '/logos/firefox.svg' },
 ]
 
-const OFFSET = new THREE.Vector3(3.5, 0, -6) // camera-local: right margin, centered
-// Wide slides (`split`/`center`) push the card out toward the coin column, so on
-// those we shove the coins further right to clear the card's right edge.
-const WIDE_OFFSET = new THREE.Vector3(4.8, 0, -6)
+// The coin column floats `COIN_DIST` in front of the camera, hugging the right
+// margin. Its X is a FRACTION of the visible frustum half-width (computed per
+// frame from the camera fov + aspect), NOT a fixed world distance — a fixed
+// offset maps to a different screen position at every aspect ratio and fell off
+// the right edge on projectors narrower than 16:9. As a fraction it lands at the
+// same spot on screen everywhere, staying on-screen AND clearing the card.
+const COIN_DIST = 6
+const RIGHT_FRAC = 0.7 // normal slides
+const WIDE_FRAC = 0.87 // split/center slides: fatter card → push a touch further right
 const SPACING = 0.95
 
 // Normalize a support value → glow level + a tooltip label.
@@ -170,7 +175,13 @@ export function BrowserSupport() {
     const g = group.current
     if (!g || !materials) return
 
-    tmp.copy(wide ? WIDE_OFFSET : OFFSET).applyQuaternion(camera.quaternion)
+    // Place the column at a fraction of the frustum half-width so it sits at the
+    // same screen position regardless of aspect ratio (see COIN_DIST note above).
+    const fov = camera.fov ?? 50
+    const halfH = COIN_DIST * Math.tan(THREE.MathUtils.degToRad(fov) / 2)
+    const halfW = halfH * (camera.aspect || 16 / 9)
+    const x = halfW * (wide ? WIDE_FRAC : RIGHT_FRAC)
+    tmp.set(x, 0, -COIN_DIST).applyQuaternion(camera.quaternion)
     g.position.copy(camera.position).add(tmp)
     g.quaternion.copy(camera.quaternion)
 

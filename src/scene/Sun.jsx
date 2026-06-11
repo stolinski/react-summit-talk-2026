@@ -10,19 +10,61 @@ import { SUN_POSITION } from './layout.js'
  * only shows when the sun is actually on screen — no global wash. Every planet
  * is lit from this point.
  */
+// ±1 LSB triangular noise, added before 8-bit rounding. The corona's outer
+// half lives between alpha 0.06 and 0 — ~15 discrete 8-bit levels stretched
+// across half the screen — so an undithered gradient bakes visible rings into
+// the texture that no output pass can remove. Creation-time only: the texture
+// is static, so this adds zero per-frame churn.
+const dither = () => Math.random() + Math.random() - 1
+
+// Same stops the old createRadialGradient used, evaluated in float per pixel.
+const GLOW_STOPS = [
+  [0.0, 255, 244, 214, 0.9],
+  [0.18, 255, 221, 150, 0.3],
+  [0.45, 255, 180, 90, 0.06],
+  [1.0, 255, 160, 70, 0.0],
+]
+
+function sampleGlow(t) {
+  for (let i = 1; i < GLOW_STOPS.length; i++) {
+    const [t1] = GLOW_STOPS[i]
+    if (t <= t1) {
+      const [t0, r0, g0, b0, a0] = GLOW_STOPS[i - 1]
+      const [, r1, g1, b1, a1] = GLOW_STOPS[i]
+      const k = (t - t0) / (t1 - t0)
+      return [
+        r0 + (r1 - r0) * k,
+        g0 + (g1 - g0) * k,
+        b0 + (b1 - b0) * k,
+        a0 + (a1 - a0) * k,
+      ]
+    }
+  }
+  return GLOW_STOPS[GLOW_STOPS.length - 1].slice(1)
+}
+
 function useGlowTexture() {
   return useMemo(() => {
-    const size = 256
+    const size = 512
     const canvas = document.createElement('canvas')
     canvas.width = canvas.height = size
     const ctx = canvas.getContext('2d')
-    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-    g.addColorStop(0.0, 'rgba(255,244,214,0.9)')
-    g.addColorStop(0.18, 'rgba(255,221,150,0.3)')
-    g.addColorStop(0.45, 'rgba(255,180,90,0.06)')
-    g.addColorStop(1.0, 'rgba(255,160,70,0)')
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, size, size)
+    const img = ctx.createImageData(size, size)
+    const half = size / 2
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = (x + 0.5 - half) / half
+        const dy = (y + 0.5 - half) / half
+        const t = Math.min(1, Math.hypot(dx, dy))
+        const [r, g, b, a] = sampleGlow(t)
+        const i = (y * size + x) * 4
+        img.data[i] = Math.max(0, Math.min(255, Math.round(r + dither())))
+        img.data[i + 1] = Math.max(0, Math.min(255, Math.round(g + dither())))
+        img.data[i + 2] = Math.max(0, Math.min(255, Math.round(b + dither())))
+        img.data[i + 3] = Math.max(0, Math.min(255, Math.round(a * 255 + dither())))
+      }
+    }
+    ctx.putImageData(img, 0, 0)
     return new THREE.CanvasTexture(canvas)
   }, [])
 }
@@ -49,7 +91,7 @@ function useStreakTexture() {
         img.data[i] = 255
         img.data[i + 1] = 240
         img.data[i + 2] = 212
-        img.data[i + 3] = a * 255
+        img.data[i + 3] = Math.max(0, Math.min(255, Math.round(a * 255 + dither())))
       }
     }
     ctx.putImageData(img, 0, 0)

@@ -5,7 +5,7 @@ import { CounterDemo } from "./demos/CounterDemo.jsx";
 import { SiblingIndexDemo } from "./demos/SiblingIndexDemo.jsx";
 import { CarouselDemo } from "./demos/CarouselDemo.jsx";
 import { StickyDemo } from "./demos/StickyDemo.jsx";
-import { BottomSheetDemo } from "./demos/BottomSheetDemo.jsx";
+// import { BottomSheetDemo } from "./demos/BottomSheetDemo.jsx"; // bottom-sheet slide cut for now
 import { ReelDemo } from "./demos/ReelDemo.jsx";
 import { SwipeActionsDemo } from "./demos/SwipeActionsDemo.jsx";
 import { AnchorFlipDemo } from "./demos/AnchorFlipDemo.jsx";
@@ -45,7 +45,8 @@ const CLUSTERS = {
             variant: "terran",
             tilt: 0.18,
         },
-        camera: { pos: [-44, 9, 52], target: [-58, 3, 36] },
+        // Target below the planet → it rides high as decoration above the demos.
+        camera: { pos: [-44, 9, 52], target: [-58, -2, 36] },
     },
     "scroll-snap": {
         label: "Scroll-snap UI",
@@ -59,7 +60,7 @@ const CLUSTERS = {
             variant: "ocean",
             tilt: 0.35,
         },
-        camera: { pos: [-68, 4, -22], target: [-86, -6, -28] },
+        camera: { pos: [-68, 4, -22], target: [-86, -11, -28] },
     },
     "scroll-driven": {
         label: "Scroll-driven CSS",
@@ -74,7 +75,10 @@ const CLUSTERS = {
             tilt: 0.45,
             rings: { inner: 1.4, outer: 2.45 },
         },
-        camera: { pos: [-16, 6, -70], target: [-30, -4, -92] },
+        // Target aimed BELOW the planet so it rides high in frame (decoration above
+        // the bottom-anchored demo, not fighting it in the middle). See statement
+        // demo slides.
+        camera: { pos: [-16, 6, -70], target: [-30, -10, -92] },
     },
     "css-lang": {
         label: "CSS as a language",
@@ -88,7 +92,7 @@ const CLUSTERS = {
             variant: "cratered",
             tilt: 0.2,
         },
-        camera: { pos: [36, 2, -86], target: [44, -8, -104] },
+        camera: { pos: [36, 2, -86], target: [44, -13, -104] },
     },
     overlays: {
         label: "Overlays & menus",
@@ -103,7 +107,7 @@ const CLUSTERS = {
             tilt: 0.55,
             moon: true,
         },
-        camera: { pos: [101, 13, -26], target: [118, 5, -46] },
+        camera: { pos: [101, 13, -26], target: [118, -1, -46] },
     },
     edge: {
         label: "Bleeding edge",
@@ -123,7 +127,7 @@ const CLUSTERS = {
                 radius: 0.3,
             },
         },
-        camera: { pos: [113, 20, 38], target: [132, 14, 44] },
+        camera: { pos: [113, 20, 38], target: [132, 9, 44] },
     },
 };
 
@@ -228,10 +232,21 @@ export const slides = withClusters([
         camera: { pos: [360, 408, 190], target: [360, 400, 520] },
     },
     {
+        id: "intro-qr",
+        kicker: "Hello",
+        // QR code rendered as white stars — same chromeless intro treatment as
+        // the Sentry wordmark. The pan keeps moving right: Syntax → Sentry → QR.
+        intro: true,
+        title: "Code & Demos",
+        camera: { pos: [1080, 408, 190], target: [1080, 400, 520] },
+    },
+    {
         id: "system",
         // Frame the React-logo atom (ReactAtom, gated to this slide in Universe.jsx)
         // alone against deep space — one planet, no neighbors in sight. Looks +z so
         // the sun and the other planets stay behind the camera, out of frame.
+        // `bare`: no card — just the atom against space (you narrate over it).
+        bare: true,
         accent: "#61dafb",
         // Short smoothTime: this is a long descent from the far-out intro constellation
         // (intro-sentry is 408 units up) into a close-up of the atom, so the default
@@ -241,9 +256,18 @@ export const slides = withClusters([
 
     /* ───── PLANET 1 · Native HTML — dialogs & drawers (all <dialog>) ───── */
     {
+        // Arrival beat: just the planet + a centered chromeless wordmark
+        // (Sentry-slide style) announcing the cluster before the demos fire.
+        id: "dialogs-drawers",
+        cluster: "native-html",
+        intro: true,
+        title: "Dialogs & Drawers",
+    },
+    {
         id: "native-html",
         cluster: "native-html",
         title: "A basic modal",
+        statement: true,
         support: {
             chrome: { since: "37" },
             safari: { since: "15.4" },
@@ -260,6 +284,7 @@ export const slides = withClusters([
         id: "drawer",
         cluster: "native-html",
         title: "A drawer that slides in",
+        statement: true,
         support: {
             chrome: { since: "117" },
             safari: { since: "17.5" },
@@ -286,6 +311,7 @@ export const slides = withClusters([
         id: "drawer-exit",
         cluster: "native-html",
         title: "And it slides back out",
+        statement: true,
         support: {
             chrome: { since: "117" },
             safari: { since: "17.4" },
@@ -313,10 +339,18 @@ export const slides = withClusters([
 
     /* ───── PLANET 2 · Scroll-snap UI — sheets, swipes, carousels ───── */
     {
+        // Arrival beat (see "dialogs-drawers").
+        id: "scroll-snap",
+        cluster: "scroll-snap",
+        intro: true,
+        title: "Scroll Snap",
+    },
+    {
         id: "reel",
         cluster: "scroll-snap",
         split: true,
-        title: "A feed that snaps, post by post",
+        statement: true,
+        title: "The classic TikTok Swiper",
         support: {
             chrome: { since: "69" },
             safari: { since: "11" },
@@ -336,32 +370,34 @@ export const slides = withClusters([
         ].join("\n"),
         demo: ReelDemo,
     },
-    {
-        id: "bottom-sheet",
-        cluster: "scroll-snap",
-        split: true,
-        title: "A sheet that snaps to size",
-        support: {
-            chrome: { since: "69" },
-            safari: { since: "11" },
-            firefox: { since: "68" },
-        },
-        code: [
-            ".sheet {",
-            "  overflow-y: auto;",
-            "  scroll-snap-type: y mandatory;",
-            "  overscroll-behavior: contain;",
-            "}",
-            "",
-            "/* one rung per resting position */",
-            ".detent { scroll-snap-align: start }",
-        ].join("\n"),
-        demo: BottomSheetDemo,
-    },
+    // Cut for now — re-enable by uncommenting (and the BottomSheetDemo import).
+    // {
+    //     id: "bottom-sheet",
+    //     cluster: "scroll-snap",
+    //     split: true,
+    //     title: "A sheet that snaps to size",
+    //     support: {
+    //         chrome: { since: "69" },
+    //         safari: { since: "11" },
+    //         firefox: { since: "68" },
+    //     },
+    //     code: [
+    //         ".sheet {",
+    //         "  overflow-y: auto;",
+    //         "  scroll-snap-type: y mandatory;",
+    //         "  overscroll-behavior: contain;",
+    //         "}",
+    //         "",
+    //         "/* one rung per resting position */",
+    //         ".detent { scroll-snap-align: start }",
+    //     ].join("\n"),
+    //     demo: BottomSheetDemo,
+    // },
     {
         id: "swipe-actions",
         cluster: "scroll-snap",
         split: true,
+        statement: true,
         title: "A row swiper",
         support: {
             chrome: { since: "105" },
@@ -391,6 +427,7 @@ export const slides = withClusters([
         id: "carousel",
         cluster: "scroll-snap",
         split: true,
+        statement: true,
         title: "The carousel builds its own controls",
         support: {
             chrome: { since: "135" },
@@ -418,9 +455,18 @@ export const slides = withClusters([
 
     /* ───── PLANET 3 · Scroll-driven CSS — scroll position drives style ───── */
     {
+        // Arrival beat (see "dialogs-drawers").
+        id: "scroll-driven",
+        cluster: "scroll-driven",
+        intro: true,
+        title: "Scroll Driven",
+    },
+    {
         id: "scroll-scrub",
         cluster: "scroll-driven",
         title: "Scroll-driven animation",
+        statement: true,
+        split: true,
         support: {
             chrome: { since: "115" },
             safari: { since: "26" },
@@ -444,6 +490,7 @@ export const slides = withClusters([
         id: "sticky-state",
         cluster: "scroll-driven",
         split: true,
+        statement: true,
         title: "A header that knows it’s stuck",
         support: {
             chrome: { since: "133" },
@@ -465,9 +512,17 @@ export const slides = withClusters([
 
     /* ───── PLANET 4 · CSS as a language — it computes + knows things ───── */
     {
+        // Arrival beat (see "dialogs-drawers").
+        id: "values",
+        cluster: "css-lang",
+        intro: true,
+        title: "Values",
+    },
+    {
         id: "counter",
         cluster: "css-lang",
         title: "Numbers that count themselves",
+        statement: true,
         support: {
             chrome: { since: "85" },
             safari: { since: "16.4" },
@@ -479,8 +534,10 @@ export const slides = withClusters([
             "  initial-value: 0;",
             "}",
             "",
-            ".stat        { counter-reset: n var(--n);",
-            "               animation: count 3s both }",
+            ".stat {",
+            "  counter-reset: n var(--n);",
+            "  animation: count 3s both;",
+            "}",
             ".stat::after { content: counter(n) }",
             "",
             "@keyframes count { to { --n: 1000000 } }",
@@ -491,6 +548,8 @@ export const slides = withClusters([
         id: "sibling-index",
         cluster: "css-lang",
         title: "Every element knows its index",
+        statement: true,
+        split: true,
         support: {
             chrome: { since: "138" },
             safari: { since: "26.2" },
@@ -510,11 +569,20 @@ export const slides = withClusters([
 
     /* ───── PLANET 5 · Overlays & menus — anchor positioning (zero-JS menu) ───── */
     {
+        // Arrival beat (see "dialogs-drawers").
+        id: "overlays-menus",
+        cluster: "overlays",
+        intro: true,
+        title: "Overlays & Menus",
+    },
+    {
         id: "anchor-flip",
         cluster: "overlays",
         // Side-by-side: the code sits beside the live (draggable) demo so there's
-        // room to show the menu flipping as you drag.
+        // room to show the menu flipping as you drag. Card-less: the two panels
+        // float in space with the title as a bottom caption (see .card--statement).
         split: true,
+        statement: true,
         title: "A menu that flips to stay on screen",
         support: {
             chrome: { since: "125" },
@@ -538,20 +606,19 @@ export const slides = withClusters([
     {
         id: "image-placeholder",
         cluster: "overlays",
-        // Centered stage so the image is the centerpiece (not parked bottom-left).
-        center: true,
-        title: "Image slide",
-        // PLACEHOLDER — drop a real image in `public/` and set
-        // `image: { src: '/your-image.png', alt: '…', caption: '…' }`.
+        // Full-bleed image, no card or title — it fills the stage over the universe
+        // (see the `bare` branch in Overlay.jsx, which renders a bare `image`).
+        bare: true,
         image: {
-            alt: "Placeholder image",
-            caption: "Replace with a real image",
+            src: "/anchor.png",
+            alt: "Anchor positioning",
         },
     },
     {
         id: "select-base",
         cluster: "overlays",
         split: true,
+        statement: true,
         // Part 1 — the OPT-IN. A real native <select> (keyboard, typeahead, form
         // submission, a11y all free) becomes fully styleable with one line:
         // `appearance: base-select` on the control AND its ::picker popover. The
@@ -565,7 +632,7 @@ export const slides = withClusters([
         },
         code: [
             "<select>",
-            "  /* <selectedcontent /> display the contents of its currently selected */",
+            "  /* <selectedcontent /> mirrors the selected option */",
             "  <button><selectedcontent /></button>",
             "",
             '  <option value="maya">',
@@ -586,6 +653,10 @@ export const slides = withClusters([
         id: "select-style",
         cluster: "overlays",
         split: true,
+        statement: true,
+        // Same layout/title as select-base (it's the continuation — only the code
+        // changes); narrate the difference. Keeps the two beats visually identical.
+        title: "Select lists no longer suck",
         // Part 2 — the PAYOFF. Now the option list is just a box of flex rows you
         // style like anything else (the exact part that used to force a JS
         // combobox), with native state in pure CSS — and because the picker is a
@@ -615,6 +686,7 @@ export const slides = withClusters([
         cluster: "overlays",
         // Side-by-side: code beside the live reaction picker, to show more.
         split: true,
+        statement: true,
         // Una Kravets' emoji reaction picker, used verbatim (see EmojiPickerDemo).
         // The shock: this Facebook-style reaction bar is the SAME native <select>
         // — the only trick is laying its picker out as a horizontal row of round
@@ -649,6 +721,13 @@ export const slides = withClusters([
 
     /* ───── PLANET 6 · Bleeding edge — newest of the new ───── */
     {
+        // Arrival beat (see "dialogs-drawers").
+        id: "bleeding-edge",
+        cluster: "edge",
+        intro: true,
+        title: "Bleeding Edge",
+    },
+    {
         id: "stream",
         cluster: "edge",
         // COPY IS PLACEHOLDER — Scott rewrites. The eyebrow names the old way (the
@@ -661,7 +740,7 @@ export const slides = withClusters([
         // declarative source sit side-by-side inside the demo itself. No `support`
         // coins — the wide card would collide with the right-margin column, so the
         // compat fact (Chrome 148, flag) lives inside the demo instead.
-        center: true,
+        statement: true,
         demo: StreamDemo,
     },
     {
@@ -677,20 +756,20 @@ export const slides = withClusters([
         // mirror, and the genuine drawElementImage source all sit inside the demo.
         // No `support` coins — the wide card would collide with the right-margin
         // column, so the compat fact (Chrome 148, flag) lives inside the demo.
-        center: true,
+        statement: true,
         demo: HtmlInCanvasDemo,
     },
     {
         id: "html-canvas-reveal",
         cluster: "edge",
-        // THE STAR — the talk's own card, now a live texture on a 3D panel that
-        // dissolves into a galaxy (scene HtmlPanel, gated by this id in Universe).
-        // It blooms and the bleeding-edge planet eclipses it. NO overlay card —
-        // `bare` renders just the universe; Scott narrates why it's cool. Uses the
-        // real drawElementImage on stage (flag on), a hand-drawn fallback otherwise.
+        // THE STAR — the talk's own card, live DOM rasterized to a texture on a
+        // plain 3D panel floating beside the planet (scene HtmlPanel, gated by
+        // this id in Universe). Deliberately NO effects: the shock is just "that's
+        // real DOM in the universe" — the star-scatter trick already happened on
+        // the html-canvas slide. NO overlay card — `bare` renders just the
+        // universe; Scott narrates. Uses the real drawElementImage on stage (flag
+        // on), a hand-drawn fallback otherwise.
         bare: true,
-        // Frame the orbiting panel against the planet so the eclipse reads; looks
-        // roughly +X so the far arc of the orbit tucks behind the planet.
         camera: { pos: [112, 16, 51], target: [131, 13, 45], smoothTime: 1.4 },
     },
     {
@@ -724,6 +803,7 @@ export const slides = withClusters([
         kicker: "Agents",
         title: "Your agents can write this too.",
         body: "Less code, less bespoke APIs to use, less version thrash.",
+        statement: true,
         // Pull back out of the bleeding-edge planet to the whole-system vista.
         camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
     },
@@ -732,7 +812,7 @@ export const slides = withClusters([
         kicker: "Agents",
         eyebrow: "Every import is a trust decision",
         title: "The same menu, two supply chains",
-        center: true,
+        statement: true,
         demo: DependencyContrastDemo,
         camera: { pos: [70, 95, 250], target: [0, 0, 0] },
     },
@@ -743,25 +823,19 @@ export const slides = withClusters([
         title: "The reason you installed it is gone",
         worm: true,
         body: "You pulled in the library because writing it yourself was the expensive part. It isn’t anymore. The dependency stopped being a trade and became risk you kept for nothing.",
+        statement: true,
         // View from the SUN side (sun behind the camera, out of frame) so we see the
-        // lit face of the planet and the worm breaching it — no distracting sun.
-        camera: { pos: [26, 3, 18], target: [33, 1, 21], smoothTime: 1.6 },
-    },
-    {
-        id: "ai-other-edge",
-        kicker: "Agents",
-        eyebrow: "The other edge",
-        title: "Point it at nothing and it installs",
-        worm: true,
-        body: "Left to its average, an agent reaches for the registry — and will confidently import a package that doesn’t exist, a name attackers now register to catch the guess. The same tool that deletes dependencies will add a hostile one.",
-        // Parked at the close React-planet view (same as ai-excuse).
-        camera: { pos: [26, 3, 18], target: [33, 1, 21] },
+        // lit face of the planet and the worm breaching it — no distracting sun. Aimed
+        // BELOW the planet (low target Y) + pulled back a touch so the planet + worm
+        // ride high in the frame, leaving the lower third clear for the statement text.
+        camera: { pos: [21, 6, 16], target: [33, -2, 21], smoothTime: 1.6 },
     },
     {
         id: "ai-defaults",
         kicker: "Agents",
-        title: "You write its defaults",
-        body: "You can’t approve what you can’t recognize.",
+        title: "You have control",
+        body: "You don't have to accept whatever it gives you",
+        statement: true,
         code: [
             "# CLAUDE.md / .cursorrules",
             "",
@@ -777,11 +851,23 @@ export const slides = withClusters([
         camera: { pos: [70, 95, 250], target: [0, 0, 0], smoothTime: 1.8 },
     },
     {
-        // TODO: make this slide a generated qr code with no card.
+        // The star-field QR again as the closing beat: fly back up out of the
+        // system to the same constellation from the intro, right before the
+        // galaxy pull-back. Chromeless, just the QR + wordmark.
         id: "ai-close",
-        title: "This component could have been a div",
-        body: "Now you’re the one who decides it is. Every component you write becomes the next model’s training data — ship the platform and you raise the floor for everyone.",
-        camera: { pos: [70, 95, 250], target: [0, 0, 0] },
+        intro: true,
+        title: "Code & Demos",
+        camera: { pos: [1080, 408, 190], target: [1080, 400, 520] },
+    },
+    {
+        // Duplicate of the intro Syntax beat as a closing sign-off: pan back left
+        // from the QR to the Syntax constellation, socials enlarged below it.
+        // (Whitelisted in Universe.jsx so the constellation renders here too.)
+        id: "outro-syntax",
+        kicker: "Hello",
+        intro: true,
+        socials: ["@stolinski", "@syntaxfm"],
+        camera: { pos: [-360, 408, 190], target: [-360, 400, 520] },
     },
 
     /* ── THE PAYOFF ── The final pull-back. Stays last; nothing parked on top of
@@ -791,6 +877,10 @@ export const slides = withClusters([
         id: "galaxy",
         title: "Thank you",
         socials: ["@stolinski", "@syntaxfm"],
+        // Card-less finale: a huge "Thank you" at top-center over the galaxy
+        // pull-back, socials signed off beneath it.
+        statement: "top",
+        className: "card--thanks",
         camera: {
             pos: [8000, 52000, 15000],
             target: [8000, -900, -15000], // === GALAXY.center

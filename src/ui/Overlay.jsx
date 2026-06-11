@@ -33,9 +33,21 @@ export function Overlay() {
     const count = useStore((s) => s.count);
     const slide = slides[index];
     const Demo = slide.demo;
-    // A slide with code is a "code-hero" slide: the code centers on screen and
-    // the planet behind the frosted card becomes a backdrop glow, not the subject.
-    const codeHero = Boolean(slide.code);
+    // `statement: true` (or 'top' / 'bottom') is a punchline beat: title (+ body)
+    // enlarged, horizontally centered, and anchored to the top or bottom edge with
+    // NO frosted card — the universe carries the frame, and an edge anchor keeps the
+    // text clear of any centered 3D subject (a planet, the worm). Defaults to bottom.
+    // A `code` or `demo` on a statement slide floats in space as the hero, with the
+    // title as a bottom caption (see .card--statement:has() in index.css).
+    const statement = slide.statement
+        ? slide.statement === "top"
+            ? "top"
+            : "bottom"
+        : null;
+    // A slide with code is a "code-hero" slide: the code centers on screen and the
+    // planet behind the frosted card becomes a backdrop glow, not the subject. A
+    // statement slide opts OUT of this — its code floats card-less instead.
+    const codeHero = Boolean(slide.code) && !statement;
     // A slide can also opt into the centered stage without code (e.g. a wide
     // centerpiece demo) via `center: true`.
     const centered = codeHero || Boolean(slide.center);
@@ -86,15 +98,23 @@ export function Overlay() {
             <div
                 className={`overlay ${centered ? "overlay--center" : ""} ${
                     slide.intro ? "overlay--intro" : ""
-                }`}
+                } ${statement ? `overlay--statement overlay--statement--${statement}` : ""}`}
                 style={{ "--accent": accentFor(slide) }}
             >
                 {bare ? (
-                    // No card: a `demo` (if any) plays full-bleed; otherwise just
-                    // the universe shows through.
-                    Demo && (
+                    // No card: a full-bleed `demo` or `image` fills the stage;
+                    // with neither, just the universe shows through.
+                    (Demo || slide.image?.src) && (
                         <div className="bare-stage" key={slide.id}>
-                            <Demo />
+                            {Demo ? (
+                                <Demo />
+                            ) : (
+                                <img
+                                    className="bare-image"
+                                    src={slide.image.src}
+                                    alt={slide.image.alt || ""}
+                                />
+                            )}
                         </div>
                     )
                 ) : (
@@ -104,7 +124,9 @@ export function Overlay() {
                         codeHero ? "card--code" : ""
                     } ${slide.center && !codeHero ? "card--wide" : ""} ${
                         split ? "card--split" : ""
-                    } ${slide.intro ? "card--intro" : ""}`}
+                    } ${slide.intro ? "card--intro" : ""} ${
+                        statement ? "card--statement" : ""
+                    } ${slide.className || ""}`.trim()}
                 >
                     {/* {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}*/}
                     <h1>{slide.title}</h1>
